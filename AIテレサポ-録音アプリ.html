@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIテレサポ 録音ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0d14; --surface: #15151f; --surface2: #1e1e2e;
+  --border: rgba(255,255,255,0.07);
+  --accent: #5b6ef5; --accent-soft: rgba(91,110,245,0.15);
+  --red: #f04f4f; --red-soft: rgba(240,79,79,0.12);
+  --green: #34d399; --yellow: #fbbf24;
+  --text: #e2e2ee; --muted: #5c5c7a;
+  --mono: 'JetBrains Mono', monospace;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 32px 16px 80px;
+}
+.app-header { text-align: center; margin-bottom: 36px; }
+.app-tag {
+  display: inline-block; font-size: 10px; font-family: var(--mono);
+  letter-spacing: 3px; color: var(--accent); text-transform: uppercase;
+  background: var(--accent-soft); padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;
+}
+.app-title { font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+.app-sub { font-size: 12px; color: var(--muted); }
+
+/* storage badge */
+.storage-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 14px; margin-top: 10px;
+  font-size: 11px; color: var(--muted); font-family: var(--mono);
+}
+.storage-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.storage-dot.warn { background: var(--yellow); }
+
+/* card */
+.card {
+  width: 100%; max-width: 560px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 24px; padding: 32px 28px; margin-bottom: 18px;
+}
+
+/* mic select */
+.row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.row-lbl { font-size: 12px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.field {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif; font-size: 13px; outline: none;
+}
+.field:focus { border-color: var(--accent); }
+.field::placeholder { color: var(--muted); }
+select.field {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c5c7a' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+}
+
+/* format toggle */
+.fmt-row { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 18px; }
+.fmt-lbl { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.fmt-btns {
+  display: flex; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden; padding: 3px; gap: 3px;
+}
+.fmt-btn {
+  padding: 6px 18px; border-radius: 7px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--mono); font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.fmt-btn.active { background: var(--accent); color: #fff; }
+
+/* volume meter */
+.vol-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.vol-lbl { font-size: 11px; color: var(--muted); width: 60px; flex-shrink: 0; font-family: var(--mono); }
+.vol-track { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.vol-fill { height: 100%; width: 0%; background: var(--green); border-radius: 2px; transition: width .08s, background .2s; }
+
+/* waveform */
+.wave-wrap {
+  width: 100%; height: 72px; background: var(--surface2);
+  border-radius: 12px; overflow: hidden; margin-bottom: 22px;
+  position: relative; border: 1px solid var(--border);
+}
+#waveCanvas { width: 100%; height: 100%; display: block; }
+.wave-idle {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: 1px; pointer-events: none;
+}
+
+/* timer */
+.timer-wrap { text-align: center; margin-bottom: 22px; }
+.timer-num {
+  font-family: var(--mono); font-size: 50px; font-weight: 700;
+  letter-spacing: 2px; line-height: 1;
+}
+.timer-num.rec { color: var(--red); }
+.timer-status {
+  font-size: 11px; color: var(--muted); letter-spacing: 2px;
+  text-transform: uppercase; margin-top: 5px; font-family: var(--mono); height: 16px;
+}
+.timer-status.live::before { content: '● '; color: var(--red); animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* controls */
+.controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 22px; }
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 24px; height: 50px; border-radius: 14px; font-size: 14px; font-weight: 700;
+  font-family: 'Noto Sans JP', sans-serif; cursor: pointer; border: none; transition: all .18s; white-space: nowrap;
+}
+.btn:disabled { opacity: .3; cursor: not-allowed; }
+.btn-rec { background: var(--red); color: #fff; min-width: 136px; }
+.btn-rec:not(:disabled):hover { background: #e03c3c; transform: translateY(-1px); }
+.btn-rec.active { background: var(--surface2); border: 2px solid var(--red); color: var(--red); }
+.btn-stop { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+.btn-stop:not(:disabled):hover { border-color: rgba(255,255,255,.2); color: var(--text); transform: translateY(-1px); }
+
+/* trim row */
+.trim-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0; border-top: 1px solid var(--border);
+}
+.trim-lbl { font-size: 12px; color: var(--muted); flex: 1; }
+.toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle input { display: none; }
+.tog-track {
+  position: absolute; inset: 0; background: var(--surface2);
+  border-radius: 11px; border: 1px solid var(--border); cursor: pointer; transition: background .2s;
+}
+.toggle input:checked + .tog-track { background: var(--accent); border-color: var(--accent); }
+.tog-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; background: var(--muted);
+  border-radius: 50%; transition: transform .2s, background .2s; pointer-events: none;
+}
+.toggle input:checked ~ .tog-thumb { transform: translateX(18px); background: #fff; }
+
+/* ── LIST CARD ── */
+.list-card {
+  width: 100%; max-width: 560px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 24px; overflow: hidden;
+}
+.list-header {
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.list-title { font-size: 13px; font-weight: 700; }
+.list-meta { display: flex; align-items: center; gap: 10px; }
+.list-count {
+  font-size: 11px; font-family: var(--mono); color: var(--muted);
+  background: var(--surface2); padding: 3px 10px; border-radius: 20px;
+}
+.btn-clear-all {
+  font-size: 11px; font-family: var(--mono); color: #f87171;
+  background: var(--red-soft); border: 1px solid rgba(240,79,79,.2);
+  border-radius: 8px; padding: 3px 10px; cursor: pointer; transition: all .15s;
+}
+.btn-clear-all:hover { background: var(--red); color: #fff; }
+.list-empty {
+  padding: 40px 24px; text-align: center;
+  font-size: 13px; color: var(--muted); line-height: 1.7;
+}
+.list-loading {
+  padding: 28px 24px; text-align: center;
+  font-size: 12px; color: var(--muted); font-family: var(--mono);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+.rec-item {
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px; transition: background .15s;
+}
+.rec-item:last-child { border-bottom: none; }
+.rec-item:hover { background: rgba(255,255,255,.02); }
+.rec-top { display: flex; align-items: center; gap: 10px; }
+.rec-name { font-size: 13px; font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-saved-icon { font-size: 10px; flex-shrink: 0; color: var(--green); }
+.rec-dur { font-size: 11px; font-family: var(--mono); color: var(--muted); flex-shrink: 0; }
+.rec-fmt { font-size: 10px; font-family: var(--mono); font-weight: 700; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+.fmt-wav { background: rgba(91,110,245,.2); color: #a5b4fc; }
+.fmt-mp3 { background: rgba(52,211,153,.15); color: var(--green); }
+.rec-date { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+.rec-audio { width: 100%; height: 32px; }
+.rec-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-sm {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  font-family: 'Noto Sans JP', sans-serif; cursor: pointer; border: none; transition: all .15s;
+}
+.btn-dl { background: var(--accent-soft); color: #a5b4fc; border: 1px solid rgba(91,110,245,.3); }
+.btn-dl:hover { background: var(--accent); color: #fff; }
+.btn-del { background: var(--red-soft); color: #f87171; border: 1px solid rgba(240,79,79,.25); }
+.btn-del:hover { background: var(--red); color: #fff; }
+
+/* tips */
+.tips {
+  width: 100%; max-width: 560px; margin-top: 18px;
+  background: rgba(91,110,245,.05); border: 1px solid rgba(91,110,245,.15);
+  border-radius: 16px; padding: 18px 22px;
+}
+.tips-title { font-size: 10px; font-family: var(--mono); color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; }
+.tip { font-size: 12px; color: var(--muted); line-height: 1.7; padding-left: 12px; position: relative; margin-bottom: 2px; }
+.tip::before { content: '—'; position: absolute; left: 0; color: var(--accent); }
+
+/* toast */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 9px 20px; border-radius: 10px; font-size: 13px;
+  opacity: 0; transition: all .3s; pointer-events: none; z-index: 100; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok { border-color: rgba(52,211,153,.4); color: var(--green); }
+.toast.err { border-color: rgba(240,79,79,.4); color: #f87171; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-tag">AIテレサポ</div>
+  <div class="app-title">🎙️ 録音ツール</div>
+  <div class="app-sub">WAV / MP3 対応 · ブラウザで完結 · インストール不要</div>
+  <div class="storage-badge">
+    <div class="storage-dot" id="storageDot"></div>
+    <span id="storageBadgeText">IndexedDB 接続中...</span>
+  </div>
+</div>
+
+<!-- RECORD CARD -->
+<div class="card">
+  <!-- Mic -->
+  <div class="row">
+    <span class="row-lbl">🎤 マイク</span>
+    <select class="field" id="micSelect"><option value="">マイクを選択...</option></select>
+  </div>
+  <!-- Label -->
+  <div class="row">
+    <span class="row-lbl">ファイル名</span>
+    <input class="field" id="takeLabel" placeholder="例: もしもし / 自己紹介 / オペ転送">
+  </div>
+  <!-- Format -->
+  <div class="fmt-row">
+    <span class="fmt-lbl">形式:</span>
+    <div class="fmt-btns">
+      <button class="fmt-btn active" id="fmtWav" onclick="setFmt('wav')">WAV</button>
+      <button class="fmt-btn" id="fmtMp3" onclick="setFmt('mp3')">MP3</button>
+    </div>
+  </div>
+  <!-- Volume -->
+  <div class="vol-row">
+    <span class="vol-lbl">入力レベル</span>
+    <div class="vol-track"><div class="vol-fill" id="volFill"></div></div>
+  </div>
+  <!-- Wave -->
+  <div class="wave-wrap">
+    <canvas id="waveCanvas"></canvas>
+    <div class="wave-idle" id="waveIdle">録音待機中</div>
+  </div>
+  <!-- Timer -->
+  <div class="timer-wrap">
+    <div class="timer-num" id="timerNum">00:00</div>
+    <div class="timer-status" id="timerStatus">STANDBY</div>
+  </div>
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-rec" id="recBtn" onclick="toggleRec()">
+      <span id="recIcon">⏺</span><span id="recLbl">録音開始</span>
+    </button>
+    <button class="btn btn-stop" id="stopBtn" onclick="stopRec()" disabled>⏹ 停止 &amp; 保存</button>
+  </div>
+  <!-- Trim -->
+  <div class="trim-row">
+    <span class="trim-lbl">先頭・末尾の無音をトリム（推奨 0.1秒残し）</span>
+    <label class="toggle">
+      <input type="checkbox" id="trimToggle" checked>
+      <div class="tog-track"></div>
+      <div class="tog-thumb"></div>
+    </label>
+  </div>
+</div>
+
+<!-- LIST CARD -->
+<div class="list-card">
+  <div class="list-header">
+    <div class="list-title">💾 保存済み録音</div>
+    <div class="list-meta">
+      <span class="list-count" id="listCount">0 件</span>
+      <button class="btn-clear-all" id="clearAllBtn" onclick="clearAll()" style="display:none">全削除</button>
+    </div>
+  </div>
+  <div id="recList"><div class="list-loading">読み込み中...</div></div>
+</div>
+
+<!-- TIPS -->
+<div class="tips">
+  <div class="tips-title">AIテレサポ 録音ガイド</div>
+  <div class="tip">録音は <strong style="color:var(--text)">このデバイス・ブラウザに自動保存</strong> されます。ページを閉じても消えません。</div>
+  <div class="tip">形式は <strong style="color:var(--text)">WAV</strong> 推奨（AIテレサポ指定形式）。MP3 は容量節約向き。</div>
+  <div class="tip">先頭・末尾の無音は <strong style="color:var(--text)">0.1秒残し</strong> がシステム推奨値。トリム機能で自動カット。</div>
+  <div class="tip">「オペレーターに転送」ノードのみ、末尾に <strong style="color:var(--text)">1分の空白音</strong> を別途手動で追加してください。</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+//  IndexedDB layer
+// ════════════════════════════════════════
+const DB_NAME = 'AITeleSapo_Recorder';
+const DB_VER  = 1;
+const STORE   = 'recordings';
+let db = null;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        const s = d.createObjectStore(STORE, { keyPath: 'id' });
+        s.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+function dbSave(rec) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(rec);
+    tx.oncomplete = res;
+    tx.onerror = e => rej(e.target.error);
+  });
+}
+
+function dbGetAll() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).index('createdAt').getAll();
+    req.onsuccess = e => res(e.target.result.reverse()); // newest first
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+function dbDelete(id) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = res;
+    tx.onerror = e => rej(e.target.error);
+  });
+}
+
+function dbClear() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = res;
+    tx.onerror = e => rej(e.target.error);
+  });
+}
+
+// ════════════════════════════════════════
+//  App state
+// ════════════════════════════════════════
+let mediaRecorder  = null;
+let audioChunks    = [];
+let micStream      = null;   // ← 起動時に取得し、セッション中ずっと保持
+let sharedAudioCtx = null;   // ← 同じく保持（録音ごとに作り直さない）
+let sharedAnalyser = null;
+let animFrame      = null;
+let volFrame       = null;
+let timerIv        = null;
+let elapsedMs      = 0;
+let startTime      = 0;
+let currentFmt     = 'wav';
+// In-memory cache (id → objectURL) so audio players work without re-reading DB each time
+const urlCache     = {};
+
+// ════════════════════════════════════════
+//  Mic init — ページ起動時に一度だけ許可取得
+// ════════════════════════════════════════
+async function initMics() {
+  try {
+    // ① まず許可取得 & デバイス一覧を取得
+    const firstStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const devices     = await navigator.mediaDevices.enumerateDevices();
+    const mics        = devices.filter(d => d.kind === 'audioinput');
+
+    // ② セレクトを埋める
+    const sel = document.getElementById('micSelect');
+    sel.innerHTML = '';
+    mics.forEach((m, i) => {
+      const o = document.createElement('option');
+      o.value       = m.deviceId;
+      o.textContent = m.label || `マイク ${i+1}`;
+      sel.appendChild(o);
+    });
+    if (!mics.length) { sel.innerHTML = '<option value="">マイクが見つかりません</option>'; return; }
+
+    // ③ 選択中デバイスで改めてストリーム取得し、firstStream は閉じる
+    firstStream.getTracks().forEach(t => t.stop());
+    await acquireStream(sel.value);
+
+    // ④ マイク切り替え時は再取得
+    sel.addEventListener('change', () => acquireStream(sel.value));
+
+  } catch(e) {
+    setMicStatus(false, 'マイク許可が必要です');
+    toast('マイクへのアクセスを許可してください', 'err');
+  }
+}
+
+// 指定デバイスのストリームを取得し AudioContext も初期化
+async function acquireStream(deviceId) {
+  // 既存ストリームがあれば閉じる（マイク切り替え時）
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    cancelAnimationFrame(volFrame);
+    if (sharedAudioCtx) { await sharedAudioCtx.close(); sharedAudioCtx = null; }
+  }
+
+  const constraint = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
+  micStream = await navigator.mediaDevices.getUserMedia(constraint);
+
+  // AudioContext & Analyser をセッション中ずっと保持
+  sharedAudioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+  sharedAnalyser  = sharedAudioCtx.createAnalyser();
+  sharedAnalyser.fftSize = 1024;
+  const src = sharedAudioCtx.createMediaStreamSource(micStream);
+  src.connect(sharedAnalyser);
+
+  // 入力レベルメーターは常時表示
+  drawVolAlways();
+  setMicStatus(true, '');
+}
+
+function setMicStatus(ok, msg) {
+  const dot = document.getElementById('storageDot');
+  if (!ok) {
+    dot.className = 'storage-dot warn';
+    document.getElementById('storageBadgeText').textContent = msg;
+  }
+}
+
+// ════════════════════════════════════════
+//  Format
+// ════════════════════════════════════════
+function setFmt(f) {
+  currentFmt = f;
+  document.getElementById('fmtWav').classList.toggle('active', f==='wav');
+  document.getElementById('fmtMp3').classList.toggle('active', f==='mp3');
+}
+
+// ════════════════════════════════════════
+//  Recording
+// ════════════════════════════════════════
+async function toggleRec() {
+  if (mediaRecorder?.state === 'recording') { pauseRec(); return; }
+  if (mediaRecorder?.state === 'paused')    { resumeRec(); return; }
+  await startRec();
+}
+
+async function startRec() {
+  if (!micStream) { toast('マイクが取得できていません', 'err'); return; }
+  try {
+    // ── 保持済み micStream をそのまま使う ──
+    // AudioContext はすでに sharedAudioCtx として起動済み
+    // analyser も sharedAnalyser として接続済み
+    analyser = sharedAnalyser;   // 既存の drawWave() が参照する変数に代入
+    drawWave();
+
+    let mime = 'audio/webm;codecs=opus';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = 'audio/webm';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = 'audio/ogg';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = '';
+
+    mediaRecorder = new MediaRecorder(micStream, mime ? { mimeType: mime } : {});
+    audioChunks   = [];
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = finalize;
+    mediaRecorder.start(100);
+
+    elapsedMs = 0;
+    startTime = Date.now();
+    startTimer();
+    setRecUI(true);
+  } catch(e) { toast('録音開始エラー: ' + e.message, 'err'); }
+}
+
+function pauseRec() {
+  mediaRecorder?.pause();
+  clearInterval(timerIv);
+  const s = document.getElementById('timerStatus');
+  s.textContent = 'PAUSED'; s.classList.remove('live');
+  document.getElementById('recLbl').textContent = '再開';
+  document.getElementById('recIcon').textContent = '▶';
+}
+
+function resumeRec() {
+  mediaRecorder?.resume();
+  const base = Date.now() - elapsedMs;
+  timerIv = setInterval(() => { elapsedMs = Date.now() - base; updateClock(); }, 200);
+  const s = document.getElementById('timerStatus');
+  s.textContent = 'REC'; s.classList.add('live');
+  document.getElementById('recLbl').textContent = '一時停止';
+  document.getElementById('recIcon').textContent = '⏸';
+}
+
+function stopRec() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  // ── micStream / sharedAudioCtx は閉じない ──
+  // 次の録音でそのまま再利用するため保持し続ける
+  clearInterval(timerIv);
+  cancelAnimationFrame(animFrame);
+  // volFrame は drawVolAlways() が常時動いているので止めない
+  setRecUI(false);
+}
+
+function startTimer() {
+  const base = Date.now() - elapsedMs;
+  timerIv = setInterval(() => { elapsedMs = Date.now() - base; updateClock(); }, 200);
+}
+
+function updateClock() {
+  const s  = Math.floor(elapsedMs / 1000);
+  const mm = String(Math.floor(s/60)).padStart(2,'0');
+  const ss = String(s%60).padStart(2,'0');
+  document.getElementById('timerNum').textContent = mm + ':' + ss;
+}
+
+function setRecUI(rec) {
+  document.getElementById('recBtn').classList.toggle('active', rec);
+  document.getElementById('recIcon').textContent  = rec ? '⏸' : '⏺';
+  document.getElementById('recLbl').textContent   = rec ? '一時停止' : '録音開始';
+  document.getElementById('stopBtn').disabled     = !rec;
+  document.getElementById('timerNum').classList.toggle('rec', rec);
+  const s = document.getElementById('timerStatus');
+  s.textContent = rec ? 'REC' : 'STANDBY';
+  if (rec) s.classList.add('live'); else s.classList.remove('live');
+  document.getElementById('waveIdle').style.display = rec ? 'none' : 'flex';
+  if (!rec) {
+    // 波形だけクリア（ボリュームメーターは常時動作）
+    const cv = document.getElementById('waveCanvas');
+    cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  }
+}
+
+// ════════════════════════════════════════
+//  Waveform & Volume
+// ════════════════════════════════════════
+// 録音中のみ表示する波形（analyser = sharedAnalyser を参照）
+function drawWave() {
+  const cv  = document.getElementById('waveCanvas');
+  const ctx = cv.getContext('2d');
+  cv.width  = cv.offsetWidth  * devicePixelRatio;
+  cv.height = cv.offsetHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const W = cv.offsetWidth, H = cv.offsetHeight;
+  const buf = analyser.frequencyBinCount;
+  const data = new Uint8Array(buf);
+  (function loop() {
+    animFrame = requestAnimationFrame(loop);
+    analyser.getByteTimeDomainData(data);
+    ctx.clearRect(0,0,W,H);
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#5b6ef5';
+    ctx.shadowBlur = 8; ctx.shadowColor = '#5b6ef5';
+    ctx.beginPath();
+    const sw = W / buf; let x = 0;
+    for (let i=0; i<buf; i++) {
+      const y = (data[i]/128) * H/2;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      x += sw;
+    }
+    ctx.stroke();
+  })();
+}
+
+// 入力レベルメーター — ページが開いている間ずっと動く
+function drawVolAlways() {
+  const data = new Uint8Array(sharedAnalyser.fftSize);
+  const fill = document.getElementById('volFill');
+  (function loop() {
+    volFrame = requestAnimationFrame(loop);
+    sharedAnalyser.getByteTimeDomainData(data);
+    let sum = 0;
+    for (let i=0; i<data.length; i++) sum += Math.abs(data[i]-128);
+    const pct = Math.min(100, (sum/data.length)*3);
+    fill.style.width = pct + '%';
+    fill.style.background = pct>70 ? '#f04f4f' : pct>40 ? '#fbbf24' : '#34d399';
+  })();
+}
+
+// ════════════════════════════════════════
+//  Finalize → IndexedDB save
+// ════════════════════════════════════════
+async function finalize() {
+  const durSec  = (elapsedMs / 1000).toFixed(1);
+  elapsedMs = 0;
+  document.getElementById('timerNum').textContent = '00:00';
+
+  const raw  = new Blob(audioChunks, { type: audioChunks[0]?.type || 'audio/webm' });
+  const trim = document.getElementById('trimToggle').checked;
+  let blob;
+  try {
+    blob = currentFmt === 'wav' ? await toWav(raw, trim) : await toMp3(raw, trim);
+  } catch(e) {
+    toast('変換エラー: ' + e.message, 'err'); return;
+  }
+
+  const label    = document.getElementById('takeLabel').value.trim() || `録音_${Date.now()}`;
+  const filename = label + '.' + currentFmt;
+  const id       = Date.now();
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString('ja-JP') + ' ' + now.toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'});
+
+  // Convert blob → ArrayBuffer for IDB storage (Blob itself isn't reliably stored in all browsers)
+  const arrBuf = await blob.arrayBuffer();
+
+  const record = {
+    id,
+    name:      filename,
+    format:    currentFmt,
+    duration:  durSec,
+    createdAt: id,
+    dateStr,
+    mimeType:  blob.type,
+    data:      arrBuf     // ← stored in IndexedDB
+  };
+
+  try {
+    await dbSave(record);
+    toast(`💾 "${filename}" をデバイスに保存しました`, 'ok');
+  } catch(e) {
+    toast('DB保存エラー: ' + e.message, 'err');
+  }
+
+  await refreshList();
+  updateStorageBadge();
+}
+
+// ════════════════════════════════════════
+//  WAV / MP3 encode
+// ════════════════════════════════════════
+async function decodeAndResample(blob, sr=44100) {
+  const ab  = await blob.arrayBuffer();
+  const tmp = new AudioContext();
+  let decoded;
+  try { decoded = await tmp.decodeAudioData(ab); } finally { await tmp.close(); }
+  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * sr), sr);
+  const src = off.createBufferSource();
+  src.buffer = decoded; src.connect(off.destination); src.start(0);
+  return (await off.startRendering()).getChannelData(0);
+}
+
+function trimSilence(data, sr) {
+  const thr = 0.01, pad = Math.floor(0.1*sr);
+  let s = 0, e = data.length-1;
+  while (s < data.length && Math.abs(data[s]) < thr) s++;
+  while (e > s && Math.abs(data[e]) < thr) e--;
+  return data.slice(Math.max(0,s-pad), Math.min(data.length-1,e+pad)+1);
+}
+
+function encodeWav(pcm, sr) {
+  const buf  = new ArrayBuffer(44 + pcm.length*2);
+  const view = new DataView(buf);
+  const ws   = (o,s) => { for(let i=0;i<s.length;i++) view.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,'RIFF'); view.setUint32(4,36+pcm.length*2,true);
+  ws(8,'WAVE'); ws(12,'fmt '); view.setUint32(16,16,true);
+  view.setUint16(20,1,true); view.setUint16(22,1,true);
+  view.setUint32(24,sr,true); view.setUint32(28,sr*2,true);
+  view.setUint16(32,2,true); view.setUint16(34,16,true);
+  ws(36,'data'); view.setUint32(40,pcm.length*2,true);
+  let off = 44;
+  for(let i=0;i<pcm.length;i++,off+=2) {
+    const v = Math.max(-1,Math.min(1,pcm[i]));
+    view.setInt16(off, v<0 ? v*0x8000 : v*0x7FFF, true);
+  }
+  return new Blob([buf], { type:'audio/wav' });
+}
+
+async function toWav(blob, trim) {
+  let pcm = await decodeAndResample(blob);
+  if (trim) pcm = trimSilence(pcm, 44100);
+  return encodeWav(pcm, 44100);
+}
+
+async function toMp3(blob, trim) {
+  let pcm = await decodeAndResample(blob);
+  if (trim) pcm = trimSilence(pcm, 44100);
+  if (typeof lamejs !== 'undefined') {
+    const enc  = new lamejs.Mp3Encoder(1,44100,128);
+    const s16  = new Int16Array(pcm.length);
+    for(let i=0;i<pcm.length;i++) s16[i]=Math.max(-32768,Math.min(32767,pcm[i]*32767));
+    const parts = []; const bs = 1152;
+    for(let i=0;i<s16.length;i+=bs) {
+      const b = enc.encodeBuffer(s16.subarray(i,i+bs));
+      if (b.length) parts.push(new Int8Array(b));
+    }
+    const fl = enc.flush();
+    if (fl.length) parts.push(new Int8Array(fl));
+    return new Blob(parts, { type:'audio/mp3' });
+  }
+  toast('MP3エンコーダー未読込 → WAVで代替', 'err');
+  return encodeWav(pcm, 44100);
+}
+
+// ════════════════════════════════════════
+//  List render (reads from IndexedDB)
+// ════════════════════════════════════════
+async function refreshList() {
+  const recs = await dbGetAll();
+  const el   = document.getElementById('recList');
+  document.getElementById('listCount').textContent = recs.length + ' 件';
+  document.getElementById('clearAllBtn').style.display = recs.length ? 'block' : 'none';
+
+  if (!recs.length) {
+    el.innerHTML = '<div class="list-empty">録音するとここに表示されます。<br>ダウンロードして AIテレサポ にアップロードしてください。</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  recs.forEach(rec => {
+    // Build objectURL from stored ArrayBuffer (cache to avoid leaks)
+    if (!urlCache[rec.id]) {
+      const b = new Blob([rec.data], { type: rec.mimeType });
+      urlCache[rec.id] = URL.createObjectURL(b);
+    }
+    const url = urlCache[rec.id];
+    const div = document.createElement('div');
+    div.className = 'rec-item';
+    div.innerHTML = `
+      <div class="rec-top">
+        <span class="rec-saved-icon" title="デバイスに保存済み">💾</span>
+        <div class="rec-name" title="${rec.name}">${rec.name}</div>
+        <span class="rec-dur">${fmtDur(rec.duration)}</span>
+        <span class="rec-fmt ${rec.format==='wav'?'fmt-wav':'fmt-mp3'}">${rec.format.toUpperCase()}</span>
+      </div>
+      <div class="rec-date">${rec.dateStr}</div>
+      <audio class="rec-audio" controls src="${url}"></audio>
+      <div class="rec-actions">
+        <button class="btn-sm btn-dl" onclick="dlRec(${rec.id},'${rec.name}')">⬇ ダウンロード</button>
+        <button class="btn-sm btn-del" onclick="delRec(${rec.id})">🗑 削除</button>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function fmtDur(sec) {
+  const s = parseFloat(sec);
+  const m = Math.floor(s/60);
+  return m>0 ? `${m}:${String(Math.floor(s%60)).padStart(2,'0')}` : `${s.toFixed(1)}秒`;
+}
+
+function dlRec(id, name) {
+  const url = urlCache[id];
+  if (!url) return;
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  toast(`⬇ ${name} をダウンロード`, 'ok');
+}
+
+async function delRec(id) {
+  if (urlCache[id]) { URL.revokeObjectURL(urlCache[id]); delete urlCache[id]; }
+  await dbDelete(id);
+  await refreshList();
+  updateStorageBadge();
+  toast('削除しました', 'ok');
+}
+
+async function clearAll() {
+  if (!confirm('すべての録音を削除しますか？\nダウンロードしていないデータは失われます。')) return;
+  Object.values(urlCache).forEach(u => URL.revokeObjectURL(u));
+  Object.keys(urlCache).forEach(k => delete urlCache[k]);
+  await dbClear();
+  await refreshList();
+  updateStorageBadge();
+  toast('すべて削除しました', 'ok');
+}
+
+// ════════════════════════════════════════
+//  Storage badge
+// ════════════════════════════════════════
+async function updateStorageBadge() {
+  const dot  = document.getElementById('storageDot');
+  const txt  = document.getElementById('storageBadgeText');
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const { usage, quota } = await navigator.storage.estimate();
+      const usedMB  = (usage  / 1024 / 1024).toFixed(1);
+      const quotaMB = (quota  / 1024 / 1024).toFixed(0);
+      const pct     = ((usage/quota)*100).toFixed(0);
+      txt.textContent = `デバイス保存 ON · ${usedMB}MB 使用 / ${quotaMB}MB (${pct}%)`;
+      dot.className  = 'storage-dot' + (pct > 80 ? ' warn' : '');
+    } else {
+      txt.textContent = 'デバイス保存 ON · IndexedDB';
+    }
+  } catch {
+    txt.textContent = 'デバイス保存 ON';
+  }
+}
+
+// ════════════════════════════════════════
+//  Toast
+// ════════════════════════════════════════
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast ' + type;
+  setTimeout(()=>el.classList.add('show'),10);
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+// ════════════════════════════════════════
+//  Boot
+// ════════════════════════════════════════
+window.addEventListener('load', async () => {
+  // ① lamejs ロード（MP3用）
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js';
+  document.head.appendChild(s);
+
+  // ② マイク許可を最初に一度だけ取得（以降は保持したストリームを再利用）
+  await initMics();
+
+  // マイクが抜き差しされたら再スキャン
+  navigator.mediaDevices.addEventListener('devicechange', async () => {
+    const sel = document.getElementById('micSelect');
+    await initMics();               // リスト更新
+    // 現在選択中デバイスで再接続
+    await acquireStream(sel.value);
+  });
+
+  // ③ IndexedDB 初期化 → 録音リスト復元
+  try {
+    await openDB();
+    await refreshList();
+    updateStorageBadge();
+  } catch(e) {
+    document.getElementById('storageBadgeText').textContent = '保存エラー: ' + e.message;
+    document.getElementById('storageDot').className = 'storage-dot warn';
+  }
+});
+</script>
+</body>
+</html>
