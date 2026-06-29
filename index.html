@@ -550,9 +550,9 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
         </div>
         <div class="hold-body" id="holdBody" style="display:none">
           <div class="hold-presets">
-            <button class="hold-preset active" data-id="beep"    onclick="selectHold(this,'beep')">📞 電話保留</button>
-            <button class="hold-preset"        data-id="ring"    onclick="selectHold(this,'ring')">🔔 コール音</button>
-            <button class="hold-preset"        data-id="soft"    onclick="selectHold(this,'soft')">🎼 ソフトBGM</button>
+            <button class="hold-preset active" data-id="calm"    onclick="selectHold(this,'calm')">🎼 落ち着いたBGM</button>
+            <button class="hold-preset"        data-id="piano"   onclick="selectHold(this,'piano')">🎹 ピアノBGM</button>
+            <button class="hold-preset"        data-id="lounge"  onclick="selectHold(this,'lounge')">🎷 ラウンジ</button>
             <button class="hold-preset"        data-id="silence" onclick="selectHold(this,'silence')">🔕 無音</button>
           </div>
           <div class="hold-dur-row">
@@ -1302,95 +1302,103 @@ function encodeWav(pcm,sr){
 // ════════════════════════════════════════════════════════
 //  保留音 (HOLD MUSIC) — Web Audio APIでPCM生成
 // ════════════════════════════════════════════════════════
-let holdType = 'beep';   // 選択中プリセット
-let holdPreviewNode = null;  // 再生中のAudioNode
+// ════════════════════════════════════════════════════════
+//  保留音 — 著作権フリーURL読み込み方式
+// ════════════════════════════════════════════════════════
 
-// ── プリセット音源をPCMで生成（1ループ分） ──
-function generateHoldPcm(type, sr = 44100) {
-  switch (type) {
-    case 'beep':   return genBeep(sr);
-    case 'ring':   return genRing(sr);
-    case 'soft':   return genSoft(sr);
-    case 'silence': return new Float32Array(sr * 2); // 2秒無音
-    default:       return genBeep(sr);
+// プリセット定義（著作権フリー素材 / Pixabay License）
+const HOLD_PRESETS = {
+  calm: {
+    label: '🎼 落ち着いたBGM',
+    url: 'https://cdn.pixabay.com/audio/2022/10/16/audio_3d60c4d0a1.mp3',
+  },
+  piano: {
+    label: '🎹 ピアノBGM',
+    url: 'https://cdn.pixabay.com/audio/2024/02/28/audio_a4d4d5ee4b.mp3',
+  },
+  lounge: {
+    label: '🎷 ラウンジ',
+    url: 'https://cdn.pixabay.com/audio/2022/11/22/audio_fbc04a8b96.mp3',
+  },
+  silence: {
+    label: '🔕 無音',
+    url: null,
+  },
+};
+
+let holdType = 'calm';
+// キャッシュ: type → Float32Array (44100Hz mono PCM)
+const holdPcmCache = {};
+let holdPreviewCtx = null;
+let holdPreviewNode = null;
+
+// ── URL から PCM を取得（キャッシュ付き）──
+async function fetchHoldPcm(type, sr = 44100) {
+  if (holdPcmCache[type]) return holdPcmCache[type];
+
+  const preset = HOLD_PRESETS[type];
+  if (!preset || !preset.url) {
+    // 無音: 2秒分のゼロ配列
+    const silent = new Float32Array(sr * 2);
+    holdPcmCache[type] = silent;
+    return silent;
+  }
+
+  try {
+    const res = await fetch(preset.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const arrayBuf = await res.arrayBuffer();
+    const tmpCtx = new AudioContext();
+    let decoded;
+    try { decoded = await tmpCtx.decodeAudioData(arrayBuf); }
+    finally { await tmpCtx.close(); }
+
+    // モノラル・44100Hzにリサンプリング
+    const offCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration * sr), sr);
+    const src = offCtx.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offCtx.destination);
+    src.start(0);
+    const rendered = await offCtx.startRendering();
+    const pcm = rendered.getChannelData(0);
+    holdPcmCache[type] = pcm;
+    return pcm;
+  } catch (e) {
+    toast(`⚠️ 音源の読み込みに失敗しました: ${e.message}`, 'err');
+    return new Float32Array(sr * 2); // フォールバック: 無音
   }
 }
 
-// 📞 電話保留音: 440Hz+880Hz が交互に鳴るビープ (2秒ループ)
-function genBeep(sr) {
-  const len = sr * 2;
-  const out = new Float32Array(len);
-  for (let i = 0; i < len; i++) {
-    const t = i / sr;
-    const freq = (Math.floor(t * 2) % 2 === 0) ? 440 : 880;
-    const fade = Math.min(1, Math.min(i, len - i) / (sr * 0.02)); // 20ms fade
-    out[i] = Math.sin(2 * Math.PI * freq * t) * 0.25 * fade;
-  }
-  return out;
-}
-
-// 🔔 コール音: リング風 (0.4秒ON / 0.2秒OFF を繰り返す 2秒ループ)
-function genRing(sr) {
-  const len = sr * 2;
-  const out = new Float32Array(len);
-  const cycle = sr * 0.6; // 0.6秒1サイクル
-  const onTime = sr * 0.4;
-  for (let i = 0; i < len; i++) {
-    const t = i / sr;
-    const pos = i % cycle;
-    if (pos < onTime) {
-      const env = Math.min(1, Math.min(pos, onTime - pos) / (sr * 0.015));
-      out[i] = (Math.sin(2 * Math.PI * 480 * t) + Math.sin(2 * Math.PI * 620 * t)) * 0.15 * env;
-    }
-  }
-  return out;
-}
-
-// 🎼 ソフトBGM: C maj アルペジオ (4秒ループ)
-function genSoft(sr) {
-  const len = sr * 4;
-  const out = new Float32Array(len);
-  const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; // C E G C G E
-  const noteDur = sr * (4 / notes.length);
-  for (let i = 0; i < len; i++) {
-    const t = i / sr;
-    const noteIdx = Math.floor(i / noteDur) % notes.length;
-    const freq = notes[noteIdx];
-    const pos = i % noteDur;
-    const env = Math.min(1, pos / (sr * 0.04)) * Math.max(0, 1 - (pos - noteDur * 0.6) / (noteDur * 0.4));
-    out[i] = Math.sin(2 * Math.PI * freq * t) * 0.18 * Math.max(0, env);
-  }
-  return out;
-}
-
-// ── 指定秒数分ループして結合 ──
-function buildHoldPcm(type, durationSec, sr = 44100) {
-  const loop = generateHoldPcm(type, sr);
+// ── PCM をループして指定秒数に伸ばす ──
+function loopHoldPcm(loopPcm, durationSec, sr = 44100) {
+  if (!loopPcm || loopPcm.length === 0) return new Float32Array(Math.round(durationSec * sr));
   const totalSamples = Math.round(durationSec * sr);
   const out = new Float32Array(totalSamples);
   for (let i = 0; i < totalSamples; i++) {
-    out[i] = loop[i % loop.length];
+    out[i] = loopPcm[i % loopPcm.length];
   }
-  // 末尾フェードアウト (最後の0.3秒)
-  const fadeLen = Math.min(Math.round(0.3 * sr), totalSamples);
+  // 末尾0.5秒フェードアウト
+  const fadeLen = Math.min(Math.round(0.5 * sr), totalSamples);
   for (let i = 0; i < fadeLen; i++) {
-    out[totalSamples - fadeLen + i] *= (1 - i / fadeLen);
+    out[totalSamples - fadeLen + i] *= 1 - i / fadeLen;
   }
   return out;
 }
 
-// ── UI制御 ──
+// ── UI 制御 ──
 function selectHold(btn, type) {
   holdType = type;
   document.querySelectorAll('.hold-preset').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   updateHoldPreview();
+  // バックグラウンドでプリフェッチ
+  if (HOLD_PRESETS[type]?.url) fetchHoldPcm(type).catch(() => {});
 }
 
 function setHoldDur(sec) {
   document.getElementById('holdDurInput').value = sec;
   document.querySelectorAll('.hold-dur-row .silence-preset').forEach(b => {
-    b.classList.toggle('active', b.textContent.replace('秒','').trim() === String(sec));
+    b.classList.toggle('active', b.textContent.replace('秒', '').trim() === String(sec));
   });
   updateHoldPreview();
 }
@@ -1400,63 +1408,83 @@ function updateHoldPreview() {
   document.getElementById('holdBody').style.display = on ? 'flex' : 'none';
   if (!on) { stopHoldPreview(); return; }
   const dur = parseInt(document.getElementById('holdDurInput').value) || 60;
-  const names = { beep:'電話保留音', ring:'コール音', soft:'ソフトBGM', silence:'無音' };
-  document.getElementById('holdPreviewLabel').textContent = `録音 ＋ ${names[holdType]} ${dur}秒`;
+  const label = HOLD_PRESETS[holdType]?.label || holdType;
+  document.getElementById('holdPreviewLabel').textContent = `録音 ＋ ${label} ${dur}秒`;
 }
 
-// ── プレビュー再生 ──
-let holdPreviewCtx = null;
-function previewHold() {
+// ── プレビュー再生（URLから取得して再生）──
+async function previewHold() {
   const btn = document.getElementById('holdPlayBtn');
   if (holdPreviewCtx) { stopHoldPreview(); return; }
 
-  const dur = Math.min(10, parseInt(document.getElementById('holdDurInput').value) || 60); // プレビューは最大10秒
-  const sr = 44100;
-  const pcm = buildHoldPcm(holdType, dur, sr);
+  btn.textContent = '⏳ 読み込み中...';
+  btn.disabled = true;
 
-  holdPreviewCtx = new AudioContext();
-  const buf = holdPreviewCtx.createBuffer(1, pcm.length, sr);
-  buf.copyToChannel(pcm, 0);
-  holdPreviewNode = holdPreviewCtx.createBufferSource();
-  holdPreviewNode.buffer = buf;
-  holdPreviewNode.connect(holdPreviewCtx.destination);
-  holdPreviewNode.start();
-  holdPreviewNode.onended = stopHoldPreview;
+  try {
+    const sr = 44100;
+    const previewSec = Math.min(15, parseInt(document.getElementById('holdDurInput').value) || 60);
+    const loopPcm = await fetchHoldPcm(holdType, sr);
+    const pcm = loopHoldPcm(loopPcm, previewSec, sr);
 
-  btn.textContent = '⏹ 停止';
-  btn.classList.add('playing');
+    holdPreviewCtx = new AudioContext();
+    const buf = holdPreviewCtx.createBuffer(1, pcm.length, sr);
+    buf.copyToChannel(pcm, 0);
+    holdPreviewNode = holdPreviewCtx.createBufferSource();
+    holdPreviewNode.buffer = buf;
+    holdPreviewNode.connect(holdPreviewCtx.destination);
+    holdPreviewNode.start();
+    holdPreviewNode.onended = stopHoldPreview;
+
+    btn.textContent = '⏹ 停止';
+    btn.classList.add('playing');
+  } catch (e) {
+    toast('再生エラー: ' + e.message, 'err');
+    btn.textContent = '▶ プレビュー再生';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function stopHoldPreview() {
-  try { holdPreviewNode?.stop(); } catch(e){}
+  try { holdPreviewNode?.stop(); } catch (e) {}
   holdPreviewCtx?.close();
   holdPreviewCtx = null; holdPreviewNode = null;
   const btn = document.getElementById('holdPlayBtn');
   if (btn) { btn.textContent = '▶ プレビュー再生'; btn.classList.remove('playing'); }
 }
 
-// holdDurInputの変化でプレビューラベル更新
+// ── 結合用 PCM 取得（toWav/toMp3 から呼ぶ）──
+async function buildHoldPcm(type, durationSec, sr = 44100) {
+  const loopPcm = await fetchHoldPcm(type, sr);
+  return loopHoldPcm(loopPcm, durationSec, sr);
+}
+
+// holdDurInput の変化でラベル更新
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('holdDurInput')?.addEventListener('input', () => {
     document.querySelectorAll('.hold-dur-row .silence-preset').forEach(b => b.classList.remove('active'));
     updateHoldPreview();
   });
+  // 初期プリフェッチ
+  fetchHoldPcm('calm').catch(() => {});
 });
 
 // ════════════════════════════════════════════════════════
 //  空白音付加（保留音を含む）
 // ════════════════════════════════════════════════════════
-function applyPad(pcm, sr) {
-  const head   = parseFloat(document.getElementById('headSilInput')?.value) || 0;
-  const tail   = parseFloat(document.getElementById('tailSilInput')?.value) || 0;
+async function applyPad(pcm, sr) {
+  const head    = parseFloat(document.getElementById('headSilInput')?.value) || 0;
+  const tail    = parseFloat(document.getElementById('tailSilInput')?.value) || 0;
   const holdOn  = document.getElementById('holdToggle')?.checked;
   const holdDur = parseInt(document.getElementById('holdDurInput')?.value) || 60;
   const parts = [];
   if (head > 0) parts.push(makeSilence(head, sr));
   parts.push(pcm);
   if (tail > 0) parts.push(makeSilence(tail, sr));
-  // 保留音は最末尾に結合
-  if (holdOn && holdDur > 0) parts.push(buildHoldPcm(holdType, holdDur, sr));
+  if (holdOn && holdDur > 0) {
+    toast('🎵 保留音を読み込み中...', 'ok');
+    parts.push(await buildHoldPcm(holdType, holdDur, sr));
+  }
   return parts.length > 1 ? concatPcm(...parts) : pcm;
 }
 async function toWav(blob,trim){
