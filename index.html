@@ -376,7 +376,37 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
   .modal-title{font-size:15px}
 }
 
-/* デスクトップではボトムナビ非表示 */
+/* ── HOLD MUSIC UI ── */
+.hold-row{
+  padding:10px 0 0;border-top:1px solid var(--border);margin-top:8px;
+}
+.hold-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0}
+.hold-lbl{font-size:12px;font-weight:700;color:var(--text)}
+.hold-body{padding-top:10px;display:flex;flex-direction:column;gap:10px}
+.hold-presets{display:flex;gap:6px;flex-wrap:wrap}
+.hold-preset{
+  padding:6px 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--s2);color:var(--muted);font-family:inherit;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.hold-preset.active{background:linear-gradient(135deg,var(--accent),#7c3aed);border-color:transparent;color:#fff}
+.hold-preset:hover:not(.active){border-color:rgba(255,255,255,.2);color:var(--text)}
+.hold-dur-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hold-preview-row{display:flex;align-items:center;gap:10px}
+.hold-play-btn{
+  padding:6px 14px;border-radius:8px;border:1px solid rgba(91,110,245,.4);
+  background:var(--asof);color:#a5b4fc;font-family:inherit;font-size:12px;
+  font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.hold-play-btn:hover{background:var(--accent);color:#fff}
+.hold-play-btn.playing{background:var(--red);border-color:var(--red);color:#fff}
+.hold-preview-label{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+@media(max-width:700px){
+  .hold-presets{gap:5px}
+  .hold-preset{font-size:11px;padding:5px 9px}
+  .hold-preview-row{flex-wrap:wrap}
+}
 .bottom-nav{display:none}
 .drawer-overlay{display:none}
 .sheet-handle{display:none}
@@ -507,6 +537,37 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
           </div>
         </div>
         <div class="silence-preview" id="silencePreview">先頭3秒 ＋ 録音</div>
+      </div>
+
+      <!-- 保留音設定 -->
+      <div class="hold-row" id="holdRow">
+        <div class="hold-header">
+          <span class="hold-lbl">🎵 保留音を末尾に結合</span>
+          <label class="toggle" style="flex-shrink:0">
+            <input type="checkbox" id="holdToggle" onchange="updateHoldPreview()">
+            <div class="tog-t"></div><div class="tog-th"></div>
+          </label>
+        </div>
+        <div class="hold-body" id="holdBody" style="display:none">
+          <div class="hold-presets">
+            <button class="hold-preset active" data-id="beep"    onclick="selectHold(this,'beep')">📞 電話保留</button>
+            <button class="hold-preset"        data-id="ring"    onclick="selectHold(this,'ring')">🔔 コール音</button>
+            <button class="hold-preset"        data-id="soft"    onclick="selectHold(this,'soft')">🎼 ソフトBGM</button>
+            <button class="hold-preset"        data-id="silence" onclick="selectHold(this,'silence')">🔕 無音</button>
+          </div>
+          <div class="hold-dur-row">
+            <span class="silence-lbl">結合時間</span>
+            <button class="silence-preset" onclick="setHoldDur(30)">30秒</button>
+            <button class="silence-preset active" onclick="setHoldDur(60)">60秒</button>
+            <button class="silence-preset" onclick="setHoldDur(120)">120秒</button>
+            <input class="silence-custom" id="holdDurInput" type="number" min="1" max="600" step="1" value="60">
+            <span class="silence-unit">秒</span>
+          </div>
+          <div class="hold-preview-row">
+            <button class="hold-play-btn" id="holdPlayBtn" onclick="previewHold()">▶ プレビュー再生</button>
+            <span class="hold-preview-label" id="holdPreviewLabel">録音 ＋ 電話保留音 60秒</span>
+          </div>
+        </div>
       </div>
       </div><!-- /rec-panel-inner -->
     </div>
@@ -1238,13 +1299,164 @@ function encodeWav(pcm,sr){
   let off=44;for(let i=0;i<pcm.length;i++,off+=2){const v=Math.max(-1,Math.min(1,pcm[i]));view.setInt16(off,v<0?v*0x8000:v*0x7FFF,true);}
   return new Blob([buf],{type:'audio/wav'});
 }
+// ════════════════════════════════════════════════════════
+//  保留音 (HOLD MUSIC) — Web Audio APIでPCM生成
+// ════════════════════════════════════════════════════════
+let holdType = 'beep';   // 選択中プリセット
+let holdPreviewNode = null;  // 再生中のAudioNode
+
+// ── プリセット音源をPCMで生成（1ループ分） ──
+function generateHoldPcm(type, sr = 44100) {
+  switch (type) {
+    case 'beep':   return genBeep(sr);
+    case 'ring':   return genRing(sr);
+    case 'soft':   return genSoft(sr);
+    case 'silence': return new Float32Array(sr * 2); // 2秒無音
+    default:       return genBeep(sr);
+  }
+}
+
+// 📞 電話保留音: 440Hz+880Hz が交互に鳴るビープ (2秒ループ)
+function genBeep(sr) {
+  const len = sr * 2;
+  const out = new Float32Array(len);
+  for (let i = 0; i < len; i++) {
+    const t = i / sr;
+    const freq = (Math.floor(t * 2) % 2 === 0) ? 440 : 880;
+    const fade = Math.min(1, Math.min(i, len - i) / (sr * 0.02)); // 20ms fade
+    out[i] = Math.sin(2 * Math.PI * freq * t) * 0.25 * fade;
+  }
+  return out;
+}
+
+// 🔔 コール音: リング風 (0.4秒ON / 0.2秒OFF を繰り返す 2秒ループ)
+function genRing(sr) {
+  const len = sr * 2;
+  const out = new Float32Array(len);
+  const cycle = sr * 0.6; // 0.6秒1サイクル
+  const onTime = sr * 0.4;
+  for (let i = 0; i < len; i++) {
+    const t = i / sr;
+    const pos = i % cycle;
+    if (pos < onTime) {
+      const env = Math.min(1, Math.min(pos, onTime - pos) / (sr * 0.015));
+      out[i] = (Math.sin(2 * Math.PI * 480 * t) + Math.sin(2 * Math.PI * 620 * t)) * 0.15 * env;
+    }
+  }
+  return out;
+}
+
+// 🎼 ソフトBGM: C maj アルペジオ (4秒ループ)
+function genSoft(sr) {
+  const len = sr * 4;
+  const out = new Float32Array(len);
+  const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; // C E G C G E
+  const noteDur = sr * (4 / notes.length);
+  for (let i = 0; i < len; i++) {
+    const t = i / sr;
+    const noteIdx = Math.floor(i / noteDur) % notes.length;
+    const freq = notes[noteIdx];
+    const pos = i % noteDur;
+    const env = Math.min(1, pos / (sr * 0.04)) * Math.max(0, 1 - (pos - noteDur * 0.6) / (noteDur * 0.4));
+    out[i] = Math.sin(2 * Math.PI * freq * t) * 0.18 * Math.max(0, env);
+  }
+  return out;
+}
+
+// ── 指定秒数分ループして結合 ──
+function buildHoldPcm(type, durationSec, sr = 44100) {
+  const loop = generateHoldPcm(type, sr);
+  const totalSamples = Math.round(durationSec * sr);
+  const out = new Float32Array(totalSamples);
+  for (let i = 0; i < totalSamples; i++) {
+    out[i] = loop[i % loop.length];
+  }
+  // 末尾フェードアウト (最後の0.3秒)
+  const fadeLen = Math.min(Math.round(0.3 * sr), totalSamples);
+  for (let i = 0; i < fadeLen; i++) {
+    out[totalSamples - fadeLen + i] *= (1 - i / fadeLen);
+  }
+  return out;
+}
+
+// ── UI制御 ──
+function selectHold(btn, type) {
+  holdType = type;
+  document.querySelectorAll('.hold-preset').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateHoldPreview();
+}
+
+function setHoldDur(sec) {
+  document.getElementById('holdDurInput').value = sec;
+  document.querySelectorAll('.hold-dur-row .silence-preset').forEach(b => {
+    b.classList.toggle('active', b.textContent.replace('秒','').trim() === String(sec));
+  });
+  updateHoldPreview();
+}
+
+function updateHoldPreview() {
+  const on = document.getElementById('holdToggle').checked;
+  document.getElementById('holdBody').style.display = on ? 'flex' : 'none';
+  if (!on) { stopHoldPreview(); return; }
+  const dur = parseInt(document.getElementById('holdDurInput').value) || 60;
+  const names = { beep:'電話保留音', ring:'コール音', soft:'ソフトBGM', silence:'無音' };
+  document.getElementById('holdPreviewLabel').textContent = `録音 ＋ ${names[holdType]} ${dur}秒`;
+}
+
+// ── プレビュー再生 ──
+let holdPreviewCtx = null;
+function previewHold() {
+  const btn = document.getElementById('holdPlayBtn');
+  if (holdPreviewCtx) { stopHoldPreview(); return; }
+
+  const dur = Math.min(10, parseInt(document.getElementById('holdDurInput').value) || 60); // プレビューは最大10秒
+  const sr = 44100;
+  const pcm = buildHoldPcm(holdType, dur, sr);
+
+  holdPreviewCtx = new AudioContext();
+  const buf = holdPreviewCtx.createBuffer(1, pcm.length, sr);
+  buf.copyToChannel(pcm, 0);
+  holdPreviewNode = holdPreviewCtx.createBufferSource();
+  holdPreviewNode.buffer = buf;
+  holdPreviewNode.connect(holdPreviewCtx.destination);
+  holdPreviewNode.start();
+  holdPreviewNode.onended = stopHoldPreview;
+
+  btn.textContent = '⏹ 停止';
+  btn.classList.add('playing');
+}
+
+function stopHoldPreview() {
+  try { holdPreviewNode?.stop(); } catch(e){}
+  holdPreviewCtx?.close();
+  holdPreviewCtx = null; holdPreviewNode = null;
+  const btn = document.getElementById('holdPlayBtn');
+  if (btn) { btn.textContent = '▶ プレビュー再生'; btn.classList.remove('playing'); }
+}
+
+// holdDurInputの変化でプレビューラベル更新
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('holdDurInput')?.addEventListener('input', () => {
+    document.querySelectorAll('.hold-dur-row .silence-preset').forEach(b => b.classList.remove('active'));
+    updateHoldPreview();
+  });
+});
+
+// ════════════════════════════════════════════════════════
+//  空白音付加（保留音を含む）
+// ════════════════════════════════════════════════════════
 function applyPad(pcm, sr) {
-  const head = parseFloat(document.getElementById('headSilInput')?.value) || 0;
-  const tail = parseFloat(document.getElementById('tailSilInput')?.value) || 0;
+  const head   = parseFloat(document.getElementById('headSilInput')?.value) || 0;
+  const tail   = parseFloat(document.getElementById('tailSilInput')?.value) || 0;
+  const holdOn  = document.getElementById('holdToggle')?.checked;
+  const holdDur = parseInt(document.getElementById('holdDurInput')?.value) || 60;
   const parts = [];
   if (head > 0) parts.push(makeSilence(head, sr));
   parts.push(pcm);
   if (tail > 0) parts.push(makeSilence(tail, sr));
+  // 保留音は最末尾に結合
+  if (holdOn && holdDur > 0) parts.push(buildHoldPcm(holdType, holdDur, sr));
   return parts.length > 1 ? concatPcm(...parts) : pcm;
 }
 async function toWav(blob,trim){
