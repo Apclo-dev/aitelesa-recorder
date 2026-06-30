@@ -390,7 +390,8 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
   font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
 }
 .hold-preset.active{background:linear-gradient(135deg,var(--accent),#7c3aed);border-color:transparent;color:#fff}
-.hold-preset:hover:not(.active){border-color:rgba(255,255,255,.2);color:var(--text)}
+.hold-preset:hover:not(.active):not(:disabled){border-color:rgba(255,255,255,.2);color:var(--text)}
+.hold-preset:disabled{opacity:.35;cursor:not-allowed}
 .hold-dur-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .hold-preview-row{display:flex;align-items:center;gap:10px}
 .hold-play-btn{
@@ -551,8 +552,8 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
         <div class="hold-body" id="holdBody" style="display:none">
           <div class="hold-presets">
             <button class="hold-preset active" data-id="calm"    onclick="selectHold(this,'calm')">🎼 落ち着いたBGM</button>
-            <button class="hold-preset"        data-id="piano"   onclick="selectHold(this,'piano')">🎹 ピアノBGM</button>
-            <button class="hold-preset"        data-id="lounge"  onclick="selectHold(this,'lounge')">🎷 ラウンジ</button>
+            <button class="hold-preset" data-id="piano"  disabled title="準備中: hold_piano.mp3 未アップロード">🎹 ピアノBGM（準備中）</button>
+            <button class="hold-preset" data-id="lounge" disabled title="準備中: hold_lounge.mp3 未アップロード">🎷 ラウンジ（準備中）</button>
             <button class="hold-preset"        data-id="silence" onclick="selectHold(this,'silence')">🔕 無音</button>
           </div>
           <div class="hold-dur-row">
@@ -1306,19 +1307,19 @@ function encodeWav(pcm,sr){
 //  保留音 — 著作権フリーURL読み込み方式
 // ════════════════════════════════════════════════════════
 
-// プリセット定義（著作権フリー素材 / Pixabay License）
+// プリセット定義（著作権フリー素材 / GitHubリポジトリ内に配置）
 const HOLD_PRESETS = {
   calm: {
     label: '🎼 落ち着いたBGM',
-    url: 'https://cdn.pixabay.com/audio/2022/10/16/audio_3d60c4d0a1.mp3',
+    url: './hold_calm.mp3',
   },
   piano: {
     label: '🎹 ピアノBGM',
-    url: 'https://cdn.pixabay.com/audio/2024/02/28/audio_a4d4d5ee4b.mp3',
+    url: null, // 未アップロード: hold_piano.mp3 を追加後にURLを設定
   },
   lounge: {
     label: '🎷 ラウンジ',
-    url: 'https://cdn.pixabay.com/audio/2022/11/22/audio_fbc04a8b96.mp3',
+    url: null, // 未アップロード: hold_lounge.mp3 を追加後にURLを設定
   },
   silence: {
     label: '🔕 無音',
