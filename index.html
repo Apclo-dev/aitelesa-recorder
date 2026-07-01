@@ -235,7 +235,155 @@ textarea.di{resize:vertical;min-height:46px}
   font-size:11px;outline:none;resize:vertical;margin-top:6px}
 .impa:focus{border-color:var(--ac)}
 
-/* toast */
+/* ── GUIDE PANEL ── */
+.guide-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(3px);z-index:500;display:none}
+.guide-overlay.open{display:block}
+.guide-panel{position:fixed;top:0;right:0;bottom:0;width:520px;max-width:94vw;
+  background:var(--sf);border-left:1px solid var(--bd2);z-index:501;
+  display:flex;flex-direction:column;transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.guide-panel.open{transform:translateX(0)}
+
+/* panel header */
+.gp-hd{padding:16px 20px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:10px;flex-shrink:0}
+.gp-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--ac),#7c3aed);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.gp-title{font-size:14px;font-weight:900;flex:1}
+.gp-sub{font-size:10px;color:var(--mu2);margin-top:1px}
+.gp-close{background:none;border:none;cursor:pointer;color:var(--mu2);
+  font-size:18px;padding:4px;transition:color .15s;flex-shrink:0}
+.gp-close:hover{color:var(--tx)}
+
+/* chapter nav */
+.gp-nav{display:flex;gap:0;border-bottom:1px solid var(--bd);
+  overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.gp-nav::-webkit-scrollbar{display:none}
+.gp-tab{padding:9px 14px;border:none;background:none;color:var(--mu);
+  font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.gp-tab:hover{color:var(--tx)}
+.gp-tab.on{color:var(--tx);border-bottom-color:var(--ac)}
+
+/* progress */
+.gp-prog{padding:8px 20px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:10px;flex-shrink:0}
+.gpp-t{flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.gpp-f{height:100%;background:linear-gradient(90deg,var(--ac),var(--gr));border-radius:2px;transition:width .4s}
+.gpp-l{font-size:10px;font-family:var(--mono);color:var(--ac);white-space:nowrap}
+
+/* content */
+.gp-body{flex:1;overflow-y:auto;padding:20px}
+.gp-body::-webkit-scrollbar{width:4px}
+.gp-body::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* guide page */
+.gpage{display:none}.gpage.on{display:block}
+
+/* cover */
+.gcover{background:linear-gradient(135deg,#0F1A3E,#1E3A8A);
+  border-radius:14px;padding:28px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+.gcover::before{content:'🤖';position:absolute;right:20px;top:50%;
+  transform:translateY(-50%);font-size:52px;opacity:.15}
+.gcover-tag{font-size:9px;font-family:var(--mono);color:var(--ac);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.gcover-title{font-size:26px;font-weight:900;color:#fff;margin-bottom:6px}
+.gcover-sub{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px}
+.gcover-tags{display:flex;gap:6px;flex-wrap:wrap}
+.gctag{font-size:10px;padding:3px 10px;border-radius:4px;
+  border:1px solid rgba(59,130,246,.4);color:#93c5fd;background:rgba(59,130,246,.1)}
+
+/* section */
+.gsec{margin-bottom:20px}
+.gsec-title{font-size:11px;font-family:var(--mono);color:var(--ac);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px}
+.gsec-title::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* step cards */
+.gstep{display:flex;gap:10px;align-items:flex-start;background:var(--s2);
+  border:1px solid var(--bd);border-radius:10px;padding:11px 13px;margin-bottom:7px}
+.gstep-n{width:22px;height:22px;border-radius:6px;background:var(--ac);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.gstep-b .gstep-t{font-size:12px;font-weight:700;margin-bottom:2px}
+.gstep-b .gstep-d{font-size:11px;color:var(--mu2);line-height:1.5}
+
+/* kpi row */
+.gkpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.gkpi{border-radius:10px;padding:14px 10px;text-align:center}
+.gkpi-n{font-size:26px;font-weight:900;font-family:var(--mono);color:#fff;line-height:1}
+.gkpi-l{font-size:10px;color:rgba(255,255,255,.6);margin-top:4px;line-height:1.3}
+
+/* info box */
+.ginfo{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  padding:12px 14px;margin-bottom:10px}
+.ginfo-hd{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;margin-bottom:6px}
+.ginfo-body{font-size:11px;color:var(--mu2);line-height:1.6}
+
+/* warn / tip / ok */
+.gwarn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+  border-radius:8px;padding:9px 13px;font-size:11px;color:#fbbf24;
+  display:flex;gap:7px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
+.gtip{background:rgba(79,124,255,.08);border:1px solid rgba(79,124,255,.2);
+  border-radius:8px;padding:9px 13px;font-size:11px;color:#93b4ff;
+  display:flex;gap:7px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
+.gok{background:rgba(34,197,122,.08);border:1px solid rgba(34,197,122,.2);
+  border-radius:8px;padding:9px 13px;font-size:11px;color:var(--gr);
+  display:flex;gap:7px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
+
+/* node cards */
+.gnode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.gnode{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:11px 12px}
+.gnode-badge{font-size:9px;font-family:var(--mono);font-weight:700;
+  padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:6px}
+.nb-n{background:rgba(55,65,81,.8);color:#93c5fd}
+.nb-j{background:rgba(6,78,59,.8);color:#6ee7b7}
+.gnode-name{font-size:12px;font-weight:700;margin-bottom:6px}
+.gnode-item{font-size:10px;color:var(--mu2);display:flex;gap:5px;line-height:1.5;margin-bottom:2px}
+.gnode-item::before{content:'•';color:var(--ac);flex-shrink:0}
+
+/* contact cards */
+.gcc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.gcc{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px 12px}
+.gcc-role{font-size:9px;color:var(--mu2);margin-bottom:2px}
+.gcc-name{font-size:12px;font-weight:700}
+.gcc-desc{font-size:10px;color:var(--mu2);margin-top:2px;line-height:1.4}
+
+/* url list */
+.gurl{display:flex;align-items:center;gap:9px;background:var(--s2);
+  border:1px solid var(--bd);border-radius:9px;padding:9px 12px;margin-bottom:6px}
+.gurl-ic{font-size:14px;flex-shrink:0}
+.gurl-b{flex:1;min-width:0}
+.gurl-name{font-size:11px;font-weight:700}
+.gurl-addr{font-size:10px;font-family:var(--mono);color:var(--ac);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* faq */
+.gfaq{background:var(--s2);border:1px solid var(--bd);border-radius:9px;
+  overflow:hidden;margin-bottom:6px}
+.gfaq-q{background:var(--s3);padding:8px 12px;font-size:11px;font-weight:700}
+.gfaq-a{padding:8px 12px;font-size:11px;color:var(--mu2);line-height:1.5}
+
+/* nav footer */
+.gp-foot{padding:12px 20px;border-top:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.gp-foot-nav{display:flex;gap:6px}
+.gpbtn{padding:7px 16px;border-radius:8px;font-size:11px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;border:1px solid var(--bd2);
+  background:var(--s2);color:var(--mu2);transition:all .15s}
+.gpbtn:hover{border-color:var(--ac);color:var(--tx)}
+.gpbtn:disabled{opacity:.3;cursor:not-allowed}
+.gpbtn.pr{background:var(--ac);border-color:var(--ac);color:#fff}
+.gpbtn.pr:hover{opacity:.88}
+.gp-pos{font-size:10px;font-family:var(--mono);color:var(--mu2)}
+
+@media(max-width:640px){
+  .guide-panel{width:100vw}
+  .gnode-grid,.gcc-grid,.gkpi-row{grid-template-columns:1fr}
+}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(10px);
   background:var(--sf);border:1px solid var(--bd);padding:7px 14px;border-radius:8px;
   font-size:11px;opacity:0;transition:all .3s;pointer-events:none;z-index:400;
@@ -269,6 +417,7 @@ textarea.di{resize:vertical;min-height:46px}
     <option value="">-- 部署を選択 --</option>
   </select>
   <div class="hd-r">
+    <button class="btn" style="background:rgba(79,124,255,.15);border-color:rgba(79,124,255,.3);color:#93b4ff;font-size:12px" onclick="openGuide()">📖 ガイド</button>
     <button class="btn pu" onclick="openAdmin()">⚙️ 管理</button>
     <button class="btn" onclick="openImport()">📥 入力</button>
     <button class="btn" onclick="exportData()">📤 出力</button>
@@ -360,6 +509,210 @@ textarea.di{resize:vertical;min-height:46px}
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════
+     GUIDE PANEL
+══════════════════════════════════════════ -->
+<div class="guide-overlay" id="guideOverlay" onclick="closeGuide()"></div>
+<div class="guide-panel" id="guidePanel">
+
+  <!-- header -->
+  <div class="gp-hd">
+    <div class="gp-logo">📖</div>
+    <div style="flex:1">
+      <div class="gp-title">AIテレサポ オンボーディングガイド</div>
+      <div class="gp-sub">セットアップ手順 · 録音方法 · このアプリの使い方</div>
+    </div>
+    <button class="gp-close" onclick="closeGuide()">✕</button>
+  </div>
+
+  <!-- chapter tabs -->
+  <nav class="gp-nav" id="gpNav"></nav>
+
+  <!-- progress -->
+  <div class="gp-prog">
+    <div class="gpp-t"><div class="gpp-f" id="gppf" style="width:0%"></div></div>
+    <span class="gpp-l" id="gppl">0 / 0 ページ閲覧済み</span>
+  </div>
+
+  <!-- body -->
+  <div class="gp-body" id="gpBody">
+
+    <!-- ── GP0: 表紙 ── -->
+    <div class="gpage" id="gp0">
+      <div class="gcover">
+        <div class="gcover-tag">AIテレサポ v1.0 | SoloptiLink × アプクロ</div>
+        <div class="gcover-title">オペレーション<br>プレイブック</div>
+        <div class="gcover-sub">このガイドを読めばセットアップから録音・発信・改善まで自己完結できます</div>
+        <div class="gcover-tags">
+          <span class="gctag">📋 このアプリの使い方</span>
+          <span class="gctag">🚀 セットアップ手順</span>
+          <span class="gctag">🎙️ 録音ガイド</span>
+          <span class="gctag">📞 発信・改善</span>
+        </div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">📚 このガイドの構成</div>
+        <div class="gstep"><div class="gstep-n">1</div><div class="gstep-b"><div class="gstep-t">このアプリの使い方</div><div class="gstep-d">チェックリストの操作方法・部署管理・クラウド同期の説明</div></div></div>
+        <div class="gstep"><div class="gstep-n">2</div><div class="gstep-b"><div class="gstep-t">AIテレサポとは</div><div class="gstep-d">サービス概要・KPI・4ステップバリューチェーン</div></div></div>
+        <div class="gstep"><div class="gstep-n">3</div><div class="gstep-b"><div class="gstep-t">ログイン情報 & 担当者連絡先</div><div class="gstep-d">各画面のID/PW・ChatWork連絡先</div></div></div>
+        <div class="gstep"><div class="gstep-n">4</div><div class="gstep-b"><div class="gstep-t">オンボーディング手順</div><div class="gstep-d">Kickoffまでの4ステップ</div></div></div>
+        <div class="gstep"><div class="gstep-n">5</div><div class="gstep-b"><div class="gstep-t">スクリプト設計</div><div class="gstep-d">ノード構造・キーワード・優先順位設定</div></div></div>
+        <div class="gstep"><div class="gstep-n">6</div><div class="gstep-b"><div class="gstep-t">録音 & 発信準備</div><div class="gstep-d">録音ツールの使い方・チャンネル設定・タスク作成</div></div></div>
+        <div class="gstep"><div class="gstep-n">7</div><div class="gstep-b"><div class="gstep-t">オペレーター対応 & PDCA改善</div><div class="gstep-d">代電フロー・ログ分析・スクリプト改善サイクル</div></div></div>
+      </div>
+    </div>
+
+    <!-- ── GP1: このアプリの使い方 ── -->
+    <div class="gpage" id="gp1">
+      <div class="gsec">
+        <div class="gsec-title">📋 このアプリの使い方</div>
+        <div class="gtip">💡 このチェックリストは録音作業の進捗を管理するツールです。チェックを入れながら作業を進めてください。</div>
+        <div class="gstep"><div class="gstep-n">1</div><div class="gstep-b"><div class="gstep-t">部署を選択する</div><div class="gstep-d">画面上部のセレクトボックスで自分の部署を選びます。部署ごとにチェックリストの内容が変わります。</div></div></div>
+        <div class="gstep"><div class="gstep-n">2</div><div class="gstep-b"><div class="gstep-t">左ツリーからノードを選択する</div><div class="gstep-d">📦ワークスペース → 📁トーク → 🎙️バリエーション の順にクリックして作業対象を選択します。</div></div></div>
+        <div class="gstep"><div class="gstep-n">3</div><div class="gstep-b"><div class="gstep-t">録音ファイルをチェックする</div><div class="gstep-d">録音が完了したファイルの行をクリックして ✓ を入れます。担当者名・メモも記録できます（▼ をクリックで展開）。</div></div></div>
+        <div class="gstep"><div class="gstep-n">4</div><div class="gstep-b"><div class="gstep-t">進捗を共有する</div><div class="gstep-d">チェック状態はクラウド同期され、同じURLを開いている全員がリアルタイムで進捗を確認できます。</div></div></div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">⚙️ 管理者向け操作</div>
+        <div class="ginfo"><div class="ginfo-hd">🏢 部署の追加・編集</div><div class="ginfo-body">右上「⚙️ 管理」→「部署管理」タブから部署を追加・削除できます。部署ごとに異なるチェックリストを管理できます。</div></div>
+        <div class="ginfo"><div class="ginfo-hd">🌲 ノードツリーのカスタマイズ</div><div class="ginfo-body">「⚙️ 管理」→「ノード編集」タブから、ワークスペース・トーク・バリエーション・切り返しを自由に追加・編集・削除できます。</div></div>
+        <div class="ginfo"><div class="ginfo-hd">📤 データの引き継ぎ</div><div class="ginfo-body">「出力」ボタンでJSONをエクスポートし、「入力」ボタンで別の環境にインポートできます。過去の作業履歴も含めて移行できます。</div></div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">🔗 関連ツール</div>
+        <div class="gurl"><div class="gurl-ic">🎙️</div><div class="gurl-b"><div class="gurl-name">AIテレサポ専用録音アプリ</div><div class="gurl-addr"><a href="https://apclo-dev.github.io/aitelesa-recorder/" target="_blank" style="color:var(--ac)">https://apclo-dev.github.io/aitelesa-recorder/</a></div></div></div>
+        <div class="gurl"><div class="gurl-ic">⚙️</div><div class="gurl-b"><div class="gurl-name">管理画面（スクリプト編集）</div><div class="gurl-addr"><a href="https://robot.topsaler.cc/user/login" target="_blank" style="color:var(--ac)">https://robot.topsaler.cc/user/login</a></div></div></div>
+        <div class="gurl"><div class="gurl-ic">📞</div><div class="gurl-b"><div class="gurl-name">オペレーター待機画面</div><div class="gurl-addr"><a href="https://co.topsaler.cc/user/login/" target="_blank" style="color:var(--ac)">https://co.topsaler.cc/user/login/</a></div></div></div>
+      </div>
+    </div>
+
+    <!-- ── GP2: AIテレサポとは ── -->
+    <div class="gpage" id="gp2">
+      <div class="gsec">
+        <div class="gsec-title">📡 AIテレサポとは</div>
+        <div class="gtip">💡 AIで架電量を数倍にしながら、受付突破後は人間が対応することでアポ品質を維持する</div>
+        <div class="gkpi-row">
+          <div class="gkpi" style="background:linear-gradient(135deg,#2563EB,#1E40AF)"><div class="gkpi-n">10×</div><div class="gkpi-l">生産性向上<br>（従来比）</div></div>
+          <div class="gkpi" style="background:linear-gradient(135deg,#1E3A8A,#1e2a5a)"><div class="gkpi-n">24h</div><div class="gkpi-l">365日<br>稼働</div></div>
+          <div class="gkpi" style="background:linear-gradient(135deg,#059669,#065F46)"><div class="gkpi-n">¥2,400</div><div class="gkpi-l">アポ1件あたり<br>（1%アポ率時）</div></div>
+        </div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">🔄 4ステップバリューチェーン</div>
+        <div class="gstep"><div class="gstep-n" style="background:#2563EB">1</div><div class="gstep-b"><div class="gstep-t">AI初動架電</div><div class="gstep-d">大量リストへ自動架電・反応収集。24h/365日稼働で営業機会を最大化</div></div></div>
+        <div class="gstep"><div class="gstep-n" style="background:#1E3A8A">2</div><div class="gstep-b"><div class="gstep-t">自動スクリーニング</div><div class="gstep-d">見込み度をA/B/Cに自動分類。80%の無効顧客をフィルタリング</div></div></div>
+        <div class="gstep"><div class="gstep-n" style="background:#059669">3</div><div class="gstep-b"><div class="gstep-t">人間クロージング</div><div class="gstep-d">Aランクのみ担当者が対応。クロージングに集中できる環境を実現</div></div></div>
+        <div class="gstep"><div class="gstep-n" style="background:#0891B2">4</div><div class="gstep-b"><div class="gstep-t">データPDCA</div><div class="gstep-d">全会話データを分析しスクリプト継続改善。アポ率を週次で向上</div></div></div>
+      </div>
+    </div>
+
+    <!-- ── GP3: ログイン & 連絡先 ── -->
+    <div class="gpage" id="gp3">
+      <div class="gsec">
+        <div class="gsec-title">🔐 ログイン情報（社外秘）</div>
+        <div class="gwarn">⚠️ この情報は社外秘です。スクリーンショット・転送・第三者共有は厳禁</div>
+        <div class="ginfo"><div class="ginfo-hd">⚙️ 管理画面（Admin）</div><div class="ginfo-body">URL: <a href="https://robot.topsaler.cc/user/login" target="_blank" style="color:var(--ac)">robot.topsaler.cc/user/login</a><br>ID: Apukuro　　PW: Apukuro<br><span style="font-size:10px;color:var(--mu)">※ 架電設定・スクリプト管理・データ分析が可能</span></div></div>
+        <div class="ginfo"><div class="ginfo-hd">📞 オペレーター画面</div><div class="ginfo-body">URL: <a href="https://co.topsaler.cc/user/login/" target="_blank" style="color:var(--ac)">co.topsaler.cc/user/login</a><br>ID①: Apukuro-01　PW①: Apukuro@0123<br>ID②: Apukuro-02　PW②: Apukuro@0123</div></div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">👥 担当者連絡先（ChatWork）</div>
+        <div class="gcc-grid">
+          <div class="gcc"><div class="gcc-role">代用担当者</div><div class="gcc-name">李 継超 様</div><div class="gcc-desc">日常的な運用・設定変更</div></div>
+          <div class="gcc"><div class="gcc-role">経理関連</div><div class="gcc-name">渡部 結菜 様</div><div class="gcc-desc">請求書・支払い・経理処理</div></div>
+          <div class="gcc"><div class="gcc-role">紹介元企業</div><div class="gcc-name">小貫 太秀 様</div><div class="gcc-desc">契約・サービス橋渡し担当</div></div>
+          <div class="gcc"><div class="gcc-role">CS担当</div><div class="gcc-name">山田 晃路 様<br>青木 慎悟 様</div><div class="gcc-desc">オンボーディング支援</div></div>
+        </div>
+        <div class="gurl"><div class="gurl-ic">💬</div><div class="gurl-b"><div class="gurl-name">ChatWork:（株）アプクロ × AIテレサポご案内</div><div class="gurl-addr"><a href="https://www.chatwork.com/#!rid418995000" target="_blank" style="color:var(--ac)">https://www.chatwork.com/#!rid418995000</a></div></div></div>
+      </div>
+    </div>
+
+    <!-- ── GP4: オンボーディング ── -->
+    <div class="gpage" id="gp4">
+      <div class="gsec">
+        <div class="gsec-title">🚀 オンボーディング — スタートまでの4ステップ</div>
+        <div class="gstep"><div class="gstep-n">01</div><div class="gstep-b"><div class="gstep-t">事前ガイドを確認する</div><div class="gstep-d">初回オンボーディング事前ガイドURLを開いて一読する<br><a href="https://docs.google.com/document/d/1TeP-CyDEzCwzU4edbAS8TPsujB0n5_sKNeADdbzuh2A/" target="_blank" style="color:var(--ac);font-size:10px">→ ガイドURLを開く</a></div></div></div>
+        <div class="gstep"><div class="gstep-n">02</div><div class="gstep-b"><div class="gstep-t">アンケートに回答する</div><div class="gstep-d">ベースAIスクリプト作成のためのアンケートに回答。自社商材・ターゲット情報を正確に記入する。</div></div></div>
+        <div class="gstep"><div class="gstep-n">03</div><div class="gstep-b"><div class="gstep-t">チュートリアル講座を受講する</div><div class="gstep-d">管理画面の使い方・架電設定・オペレーター画面の操作を学習する。</div></div></div>
+        <div class="gstep"><div class="gstep-n">04</div><div class="gstep-b"><div class="gstep-t">Kickoff ミーティング</div><div class="gstep-d">SoloptiLink担当者とKickoff（Week 1）。KPI設定・ターゲット・スクリプト最終確認。<br><span style="font-size:10px;color:var(--mu2)">ChatWorkまたは担当者から日程調整連絡</span></div></div></div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">📅 3ヶ月ロードマップ</div>
+        <div class="ginfo"><div class="ginfo-hd" style="color:#93c5fd">Week 1 — 導入フェーズ</div><div class="ginfo-body">ヒアリング・ターゲット設定 / 初期スクリプト作成 / KPI・成果目標の設定 / 管理画面セットアップ</div></div>
+        <div class="ginfo"><div class="ginfo-hd" style="color:#93c5fd">Week 2-4 — テスト・最適化</div><div class="ginfo-body">少量テスト架電（〜500件）/ 顧客反応データ分析 / スクリプト改善・音声調整 / 本格稼働向けA/Bテスト</div></div>
+        <div class="ginfo"><div class="ginfo-hd" style="color:#6ee7b7">Month 2-3 — 本格稼働・成果創出</div><div class="ginfo-body">大量架電開始（月1〜3万件）/ AIスクリーニング→人間クロージング / 週次KPIレポート確認・改善 / ROI確認・アポ単価算出</div></div>
+      </div>
+    </div>
+
+    <!-- ── GP5: スクリプト設計 ── -->
+    <div class="gpage" id="gp5">
+      <div class="gsec">
+        <div class="gsec-title">🧩 4つの基本ノード</div>
+        <div class="gnode-grid">
+          <div class="gnode"><span class="gnode-badge nb-n">通常ノード</span><div class="gnode-name">💬 もしもし</div><div class="gnode-item">音声: （3秒空白音）もしもし</div><div class="gnode-item">中断許可: ON</div><div class="gnode-item">用途: AI第一声 / 留守電スキップ</div></div>
+          <div class="gnode"><span class="gnode-badge nb-n">通常ノード</span><div class="gnode-name">📋 自己紹介</div><div class="gnode-item">音声: 社名・担当者確認の一文</div><div class="gnode-item">中断許可: <span style="color:#f87171">OFF ← 必須</span></div><div class="gnode-item">用途: 用件を最後まで伝えきる</div></div>
+          <div class="gnode"><span class="gnode-badge nb-j">ジャンプノード</span><div class="gnode-name">🔀 オペレーターに転送</div><div class="gnode-item">次のステップ: 転送</div><div class="gnode-item">末尾: <span style="color:#fbbf24">1分の空白音（必須）</span></div><div class="gnode-item">転送設定: ON</div></div>
+          <div class="gnode"><span class="gnode-badge nb-j">ジャンプノード</span><div class="gnode-name">🔴 お断り</div><div class="gnode-item">次のステップ: 切断</div><div class="gnode-item">中断許可: OFF</div><div class="gnode-item">音声: かしこまりました。失礼いたします</div></div>
+        </div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">🎯 キーワード優先順位</div>
+        <div class="ginfo"><div class="ginfo-hd" style="color:#6ee7b7">✅ 私が担当者</div><div class="ginfo-body">私です / 私が担当者 / 僕が担当者 / 担当者は私 / オーナーです / 私がオーナー / オーナーになります</div></div>
+        <div class="ginfo"><div class="ginfo-hd" style="color:#f87171">🚫 興味なし</div><div class="ginfo-body">お断り / 興味な / 興味無 / 興味ありません / 結構です</div></div>
+        <div class="gwarn">⚠️ 「興味なし」を「私が担当者」より上位に設定する。複合発言（担当+拒否）への対策として必須。左上にあるほど優先度が高い。</div>
+      </div>
+    </div>
+
+    <!-- ── GP6: 録音 & 発信 ── -->
+    <div class="gpage" id="gp6">
+      <div class="gsec">
+        <div class="gsec-title">🎙️ 録音ルール</div>
+        <div class="gstep"><div class="gstep-n">①</div><div class="gstep-b"><div class="gstep-t">ファイル形式: WAV推奨</div><div class="gstep-d">44100Hz / モノラル。MP3も可（128kbps）</div></div></div>
+        <div class="gstep"><div class="gstep-n">②</div><div class="gstep-b"><div class="gstep-t">無音トリム</div><div class="gstep-d">先頭・末尾は0.1秒残す。アプリで自動カット可能。0.4秒以上残ると認識エラーに。</div></div></div>
+        <div class="gstep"><div class="gstep-n">③</div><div class="gstep-b"><div class="gstep-t">転送ノードのみ: 末尾に1分の空白音</div><div class="gstep-d">オペレーターが代電するまでの待機時間として必須。録音アプリの「保留音を末尾に結合」トグルをONにして設定。</div></div></div>
+        <div class="gstep"><div class="gstep-n">④</div><div class="gstep-b"><div class="gstep-t">管理画面にアップロード</div><div class="gstep-d">録音アプリで録音→DL → 管理画面のノード編集からWAVをアップロード</div></div></div>
+        <div class="gurl" style="margin-top:10px"><div class="gurl-ic">🎙️</div><div class="gurl-b"><div class="gurl-name">専用録音アプリ（ブラウザで動作）</div><div class="gurl-addr"><a href="https://apclo-dev.github.io/aitelesa-recorder/" target="_blank" style="color:var(--ac)">https://apclo-dev.github.io/aitelesa-recorder/</a></div></div></div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">📊 チャンネル設定 & 発信手順</div>
+        <div class="gstep"><div class="gstep-n">①</div><div class="gstep-b"><div class="gstep-t">管理者の同時数を 0 にする</div><div class="gstep-d">全チャンネルをオペレーターに振り分けるために必須</div></div></div>
+        <div class="gstep"><div class="gstep-n">②</div><div class="gstep-b"><div class="gstep-t">オペレーターに 3以上 を設定</div><div class="gstep-d">ユーザー編集 → 同時数 3〜8（推奨）。0のままだと発信不可</div></div></div>
+        <div class="gstep"><div class="gstep-n">③</div><div class="gstep-b"><div class="gstep-t">発信時間帯: 0:00〜23:59</div><div class="gstep-d">開始・停止は手動。時間制限は設けない推奨</div></div></div>
+        <div class="gstep"><div class="gstep-n">④</div><div class="gstep-b"><div class="gstep-t">タスク作成 → リストアップロード</div><div class="gstep-d">スクリプト・回線・所有者を設定。電話番号はハイフンなし文字列形式でA列に記入</div></div></div>
+        <div class="gwarn">⚠️ 管理者のチャンネルが残ったままだとオペレーターに発信が届かない。最頻出エラー。</div>
+      </div>
+    </div>
+
+    <!-- ── GP7: オペ対応 & PDCA ── -->
+    <div class="gpage" id="gp7">
+      <div class="gsec">
+        <div class="gsec-title">📞 オペレーター対応フロー</div>
+        <div class="gstep"><div class="gstep-n">1</div><div class="gstep-b"><div class="gstep-t">初期設定（初回のみ）</div><div class="gstep-d">「転送後タスク一時停止」をONに設定。Chrome拡張機能で転送通知を受け取る。</div></div></div>
+        <div class="gstep"><div class="gstep-n">2</div><div class="gstep-b"><div class="gstep-t">転送通知を受け取る</div><div class="gstep-d">オペレーター画面に通知が届いたらリアルタイムリスニングを開始する</div></div></div>
+        <div class="gstep"><div class="gstep-n">3</div><div class="gstep-b"><div class="gstep-t">リスニング → 最適タイミングで代電</div><div class="gstep-d">AIと相手の会話を傍聴して流れを把握。「電話を代わる」ボタンでバトンタッチ。</div></div></div>
+        <div class="gstep"><div class="gstep-n">4</div><div class="gstep-b"><div class="gstep-t">見込み度を設定して提出</div><div class="gstep-d">通話終了後にA/B/C/Dで見込み度を入力して提出する</div></div></div>
+      </div>
+      <div class="gsec">
+        <div class="gsec-title">🔄 PDCA改善サイクル</div>
+        <div class="gstep"><div class="gstep-n" style="background:#1E3A8A">P</div><div class="gstep-b"><div class="gstep-t">PLAN: キーワード・スクリプト設計</div><div class="gstep-d">担当者確認キーワードと興味なしキーワードの優先順位を設計する</div></div></div>
+        <div class="gstep"><div class="gstep-n" style="background:#059669">D</div><div class="gstep-b"><div class="gstep-t">DO: 発信実行・通話録音</div><div class="gstep-d">タスクを起動して発信。通話内容は全て自動で録音・文字起こしされる</div></div></div>
+        <div class="gstep"><div class="gstep-n" style="background:#D97706">C</div><div class="gstep-b"><div class="gstep-t">CHECK: 通話ログ分析</div><div class="gstep-d">発信タスク → 通話詳細 → 通話記録で解析不能になった発言パターンを特定</div></div></div>
+        <div class="gstep"><div class="gstep-n" style="background:#DC2626">A</div><div class="gstep-b"><div class="gstep-t">ACT: キーワード追加・優先順位調整</div><div class="gstep-d">未登録表現を追加・優先順位を修正。編集後は「保存」と「公開」の両方を押す。</div></div></div>
+        <div class="gok">✅ 毎週ログを確認してキーワードを更新する習慣が受付突破率改善の鍵</div>
+      </div>
+    </div>
+
+  </div><!-- /gp-body -->
+
+  <!-- footer nav -->
+  <div class="gp-foot">
+    <button class="gpbtn" id="gpPrev" onclick="guideNav(-1)" disabled>← 前へ</button>
+    <span class="gp-pos" id="gpPos">1 / 8</span>
+    <div class="gp-foot-nav">
+      <button class="gpbtn pr" id="gpNext" onclick="guideNav(1)">次へ →</button>
+    </div>
+  </div>
+</div><!-- /guide-panel -->
 
 <!-- IMPORT MODAL -->
 <div class="ov hid" id="importModal">
@@ -986,7 +1339,70 @@ async function doImport(){
 }
 
 // ════════════════════════════════════════════════════════
-//  HELPERS
+//  GUIDE PANEL
+// ════════════════════════════════════════════════════════
+const GUIDE_CHAPTERS = [
+  { id:'gp0', label:'📖 表紙' },
+  { id:'gp1', label:'🖥️ 使い方' },
+  { id:'gp2', label:'📡 サービス概要' },
+  { id:'gp3', label:'🔐 ログイン & 連絡先' },
+  { id:'gp4', label:'🚀 オンボーディング' },
+  { id:'gp5', label:'🧩 スクリプト設計' },
+  { id:'gp6', label:'🎙️ 録音 & 発信' },
+  { id:'gp7', label:'📞 オペ対応 & PDCA' },
+];
+let guideCur = 0;
+const guideRead = new Set();
+
+function openGuide() {
+  document.getElementById('guideOverlay').classList.add('open');
+  document.getElementById('guidePanel').classList.add('open');
+  renderGuideNav();
+  guideGoTo(guideCur);
+}
+function closeGuide() {
+  document.getElementById('guideOverlay').classList.remove('open');
+  document.getElementById('guidePanel').classList.remove('open');
+}
+function renderGuideNav() {
+  const nav = document.getElementById('gpNav');
+  nav.innerHTML = GUIDE_CHAPTERS.map((c, i) =>
+    `<button class="gp-tab${guideCur===i?' on':''}" onclick="guideGoTo(${i})">${c.label}</button>`
+  ).join('');
+}
+function guideGoTo(idx) {
+  document.getElementById(GUIDE_CHAPTERS[guideCur].id)?.classList.remove('on');
+  guideCur = Math.max(0, Math.min(idx, GUIDE_CHAPTERS.length - 1));
+  document.getElementById(GUIDE_CHAPTERS[guideCur].id)?.classList.add('on');
+  document.getElementById('gpBody')?.scrollTo(0, 0);
+  guideRead.add(guideCur);
+
+  // pos label
+  document.getElementById('gpPos').textContent = `${guideCur + 1} / ${GUIDE_CHAPTERS.length}`;
+
+  // nav buttons
+  const prev = document.getElementById('gpPrev');
+  const next = document.getElementById('gpNext');
+  prev.disabled = guideCur === 0;
+  if (guideCur === GUIDE_CHAPTERS.length - 1) {
+    next.textContent = '最初に戻る →';
+    next.className = 'gpbtn';
+  } else {
+    next.textContent = '次へ →';
+    next.className = 'gpbtn pr';
+  }
+
+  // progress
+  const pct = Math.round(guideRead.size / GUIDE_CHAPTERS.length * 100);
+  document.getElementById('gppf').style.width = pct + '%';
+  document.getElementById('gppl').textContent = `${guideRead.size} / ${GUIDE_CHAPTERS.length} ページ閲覧済み`;
+
+  renderGuideNav();
+}
+function guideNav(dir) {
+  if (dir === 1 && guideCur === GUIDE_CHAPTERS.length - 1) { guideGoTo(0); return; }
+  guideGoTo(guideCur + dir);
+}
 // ════════════════════════════════════════════════════════
 function fmtDt(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('ja-JP')+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
 function fmtNow(){return fmtDt(new Date().toISOString())}
