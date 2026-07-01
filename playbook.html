@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIテレサポ オペレーションプレイブック</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1A3E;--blue:#1E3A8A;--accent:#3B82F6;--teal:#0891B2;
+  --green:#059669;--red:#DC2626;--yellow:#D97706;--orange:#EA580C;
+  --white:#FFFFFF;--off:#F1F5F9;--gray:#64748B;--lgray:#CBD5E1;--dark:#1E293B;
+  --bg:#0a0e1a;--sf:#111827;--s2:#1a2234;--s3:#212d42;
+  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.14);
+  --tx:#e2e8f0;--mu:#64748b;--mu2:#94a3b8;
+  --sans:'Noto Sans JP',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans)}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:260px 1fr;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--sf);border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;overflow:hidden}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--bd)}
+.sb-brand{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sb-pip{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.sb-title{font-size:12px;font-weight:900;letter-spacing:.3px}
+.sb-sub{font-size:10px;color:var(--mu2);line-height:1.5}
+
+/* progress */
+.sb-prog{padding:12px 18px;border-bottom:1px solid var(--bd)}
+.prog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.prog-lbl{font-size:10px;color:var(--mu2)}
+.prog-pct{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--accent)}
+.prog-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));
+  border-radius:2px;transition:width .4s ease}
+
+/* menu */
+.sb-menu{flex:1;overflow-y:auto;padding:8px 0}
+.sb-menu::-webkit-scrollbar{width:3px}
+.sb-menu::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+.menu-section{margin-bottom:2px}
+.menu-section-lbl{font-size:9px;font-family:var(--mono);color:var(--mu);
+  letter-spacing:2px;text-transform:uppercase;padding:8px 18px 4px}
+.menu-item{display:flex;align-items:center;gap:9px;padding:8px 16px;
+  cursor:pointer;border-radius:8px;margin:1px 8px;transition:all .15s;
+  border:1px solid transparent;position:relative}
+.menu-item:hover{background:rgba(255,255,255,.04)}
+.menu-item.active{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.25)}
+.menu-item.done .menu-num{background:var(--green);color:#fff}
+.menu-num{width:20px;height:20px;border-radius:6px;background:var(--s3);
+  display:flex;align-items:center;justify-content:center;font-size:9px;
+  font-family:var(--mono);font-weight:700;color:var(--mu2);flex-shrink:0;
+  transition:all .15s}
+.menu-item.active .menu-num{background:var(--accent);color:#fff}
+.menu-icon{font-size:14px;flex-shrink:0}
+.menu-body{flex:1;min-width:0}
+.menu-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-desc{font-size:10px;color:var(--mu2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.menu-ck{font-size:10px;color:var(--green);flex-shrink:0;display:none}
+.menu-item.done .menu-ck{display:block}
+
+/* sb footer */
+.sb-foot{padding:12px 16px;border-top:1px solid var(--bd);display:flex;gap:6px}
+.btn-sm{flex:1;padding:7px;border-radius:8px;border:1px solid var(--bd2);
+  background:var(--s2);color:var(--mu2);font-size:10px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .15s;text-align:center}
+.btn-sm:hover{border-color:var(--accent);color:var(--tx)}
+.btn-sm.ac{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-sm.ac:hover{opacity:.88}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;overflow:hidden}
+
+/* top bar */
+.topbar{background:var(--sf);border-bottom:1px solid var(--bd);
+  padding:0 28px;height:52px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.tb-chapter{font-size:10px;font-family:var(--mono);color:var(--accent);
+  letter-spacing:2px;text-transform:uppercase}
+.tb-title{font-size:15px;font-weight:900;flex:1}
+.tb-nav{display:flex;gap:6px}
+.nav-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--bd2);
+  background:var(--s2);color:var(--mu2);font-size:11px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .15s}
+.nav-btn:hover{border-color:var(--accent);color:var(--tx)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.nav-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.nav-btn.primary:hover{opacity:.88}
+
+/* content */
+.content{flex:1;overflow-y:auto;background:var(--bg)}
+.content::-webkit-scrollbar{width:5px}
+.content::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+
+.page{display:none;min-height:100%}
+.page.active{display:block}
+
+/* ── COVER ── */
+.cover{min-height:100%;background:linear-gradient(135deg,#0F1A3E 0%,#1E3A8A 100%);
+  display:flex;flex-direction:column;justify-content:center;padding:60px 64px;position:relative;overflow:hidden}
+.cover::before{content:'';position:absolute;right:-80px;top:-80px;
+  width:400px;height:400px;border-radius:50%;background:rgba(59,130,246,.08)}
+.cover::after{content:'';position:absolute;right:60px;bottom:-60px;
+  width:240px;height:240px;border-radius:50%;background:rgba(59,130,246,.06)}
+.cover-tag{font-size:11px;font-family:var(--mono);color:var(--accent);
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.cover-title{font-size:56px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:16px}
+.cover-desc{font-size:15px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:36px;max-width:480px}
+.cover-tags{display:flex;gap:10px;flex-wrap:wrap}
+.ctag{padding:6px 16px;border-radius:6px;border:1px solid rgba(59,130,246,.4);
+  font-size:11px;color:#93c5fd;background:rgba(59,130,246,.12)}
+.cover-robot{position:absolute;right:80px;top:50%;transform:translateY(-50%);
+  font-size:120px;opacity:.15}
+
+/* ── PAGE HEADER ── */
+.ph{background:var(--navy);padding:28px 40px 24px;border-bottom:1px solid rgba(255,255,255,.08)}
+.ph-sect{font-size:10px;font-family:var(--mono);color:var(--accent);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.ph-title{font-size:28px;font-weight:900;color:#fff}
+.pc{padding:28px 40px}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.kpi{border-radius:14px;padding:22px 20px;text-align:center}
+.kpi-n{font-size:44px;font-weight:900;font-family:var(--mono);color:#fff;line-height:1}
+.kpi-l{font-size:12px;color:rgba(255,255,255,.65);margin-top:6px;line-height:1.4}
+.kpi.blue{background:linear-gradient(135deg,#2563EB,#1E40AF)}
+.kpi.navy{background:linear-gradient(135deg,#1E3A8A,#1e2a5a)}
+.kpi.green{background:linear-gradient(135deg,#059669,#065F46)}
+
+/* ── STEP FLOW ── */
+.step-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.step-card{border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.step-hd{padding:10px 14px;font-size:10px;font-weight:700;color:#fff;
+  font-family:var(--mono);letter-spacing:.5px}
+.step-body{padding:12px 14px;font-size:12px;color:var(--mu2);line-height:1.6;min-height:80px;
+  background:var(--s2)}
+
+/* ── INFO CARDS ── */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:14px;padding:20px}
+.card-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-hd-bar{padding:10px 16px;border-radius:8px;font-size:12px;font-weight:700;color:#fff;margin-bottom:12px}
+
+/* ── CREDENTIAL TABLE ── */
+.cred-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);
+  border-radius:10px;padding:10px 16px;font-size:12px;color:#fbbf24;
+  margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.cred-table{width:100%;border-collapse:collapse;font-size:12px}
+.cred-table th{text-align:left;padding:8px 12px;font-size:10px;font-family:var(--mono);
+  color:var(--mu2);border-bottom:1px solid var(--bd);letter-spacing:.5px}
+.cred-table td{padding:9px 12px;border-bottom:1px solid var(--bd)}
+.cred-table td:first-child{color:var(--mu2);width:80px;font-family:var(--mono);font-size:11px}
+.cred-table td:last-child{font-family:var(--mono);color:var(--tx)}
+.cred-note{font-size:11px;color:var(--mu2);margin-top:10px;line-height:1.6;
+  background:rgba(59,130,246,.08);border-radius:8px;padding:10px 14px}
+
+/* ── CONTACTS ── */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.contact-card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px;
+  display:flex;gap:12px;align-items:flex-start}
+.cc-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0}
+.cc-role{font-size:9px;font-weight:700;color:var(--mu2);margin-bottom:3px}
+.cc-name{font-size:13px;font-weight:700}
+.cc-desc{font-size:11px;color:var(--mu2);margin-top:3px;line-height:1.4}
+.cw-box{background:var(--navy);border:1px solid rgba(59,130,246,.3);border-radius:10px;
+  padding:12px 16px;font-size:12px;color:#93c5fd;display:flex;align-items:center;gap:8px}
+
+/* ── ONBOARDING STEPS ── */
+.ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ob-card{background:var(--s2);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.ob-num{width:100%;padding:10px 16px;font-size:13px;font-weight:700;color:#fff;
+  display:flex;align-items:center;gap:10px}
+.ob-body{padding:14px 16px}
+.ob-check{font-size:12px;color:var(--mu2);line-height:1.7;margin-bottom:6px;
+  display:flex;gap:7px;align-items:flex-start}
+.ob-check::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+.ob-link{font-size:10px;color:var(--accent);font-family:var(--mono);
+  word-break:break-all;margin-top:6px}
+
+/* ── NODE CARDS ── */
+.node-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.node-card{background:var(--s2);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.node-badge{font-size:9px;font-family:var(--mono);font-weight:700;padding:3px 9px;
+  border-radius:4px;display:inline-block;margin:12px 14px 0}
+.nb-normal{background:rgba(55,65,81,.8);color:#93c5fd}
+.nb-jump{background:rgba(6,78,59,.8);color:#6ee7b7}
+.node-name{font-size:14px;font-weight:700;padding:6px 14px 0;color:var(--tx)}
+.node-settings{padding:10px 14px 14px;display:flex;flex-direction:column;gap:6px}
+.ns{display:flex;align-items:flex-start;gap:8px;font-size:11px}
+.ns-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ns-val{color:var(--mu2);line-height:1.5}
+
+/* ── KEYWORD ── */
+.kw-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.kw-card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.kw-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.kw-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.kw-name{font-size:13px;font-weight:700}
+.kw-words{font-size:11px;color:var(--mu2);line-height:1.7}
+.priority-box{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pbox{border-radius:12px;padding:14px 16px}
+.pbox.bad{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)}
+.pbox.good{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.2)}
+.pb-lbl{font-size:11px;font-weight:700;margin-bottom:8px}
+.pb-lbl.bad{color:#fca5a5}.pb-lbl.good{color:#6ee7b7}
+.pb-body{font-size:11px;color:var(--mu2);line-height:1.7}
+
+/* ── REC RULES ── */
+.rec-rules{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.rr{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px 14px;text-align:center}
+.rr-icon{font-size:22px;margin-bottom:8px}
+.rr-title{font-size:12px;font-weight:700;margin-bottom:6px}
+.rr-body{font-size:11px;color:var(--mu2);line-height:1.6}
+.tool-box{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);
+  border-radius:12px;padding:16px 20px}
+.tool-name{font-size:14px;font-weight:700;color:#93c5fd;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.tool-url{font-size:12px;color:var(--accent);font-family:var(--mono);margin-bottom:8px}
+.tool-feat{font-size:12px;color:var(--mu2)}
+
+/* ── STEPS LIST ── */
+.steps{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.step-row{display:flex;gap:12px;align-items:flex-start;background:var(--s2);
+  border:1px solid var(--bd);border-radius:12px;padding:12px 16px}
+.step-num{width:26px;height:26px;border-radius:7px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  font-weight:700;color:#fff;flex-shrink:0}
+.step-body .step-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.step-body .step-desc{font-size:11px;color:var(--mu2);line-height:1.5}
+
+/* ── TIMELINE (oper) ── */
+.tl{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:7px;top:4px;bottom:4px;
+  width:2px;background:linear-gradient(180deg,var(--accent),rgba(59,130,246,.1))}
+.tl-item{position:relative}
+.tl-dot{position:absolute;left:-21px;top:6px;width:12px;height:12px;
+  border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.tl-who{font-size:10px;font-family:var(--mono);color:var(--accent);margin-bottom:2px}
+.tl-text{font-size:12px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);
+  border-radius:8px;padding:8px 12px;line-height:1.5}
+
+/* ── ROADMAP ── */
+.rm-timeline{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.rm-phase{border-radius:14px;overflow:hidden}
+.rm-hd{padding:12px 16px;font-size:12px;font-weight:700;color:#fff}
+.rm-body{background:var(--s2);border:1px solid var(--bd);padding:14px 16px;border-radius:0 0 14px 14px}
+.rm-item{font-size:11px;color:var(--mu2);padding:4px 0;display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+.rm-item::before{content:'▸';color:var(--accent);flex-shrink:0}
+
+/* ── PDCA ── */
+.pdca-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pdca-circles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pdca-q{border-radius:12px;padding:16px;text-align:center}
+.pdca-letter{font-size:28px;font-weight:900;color:#fff;line-height:1}
+.pdca-word{font-size:10px;color:rgba(255,255,255,.65);margin-top:4px}
+.pdca-sub{font-size:10px;color:rgba(255,255,255,.5);margin-top:6px;line-height:1.4}
+.imp-steps{display:flex;flex-direction:column;gap:8px}
+.imp-step{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px}
+.imp-step-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;font-weight:700}
+.imp-step-body{font-size:11px;color:var(--mu2);line-height:1.5}
+
+/* ── FAQ ── */
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.faq{background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.faq-q{background:var(--navy);padding:10px 14px;font-size:12px;font-weight:700;color:#fff}
+.faq-a{padding:12px 14px;font-size:12px;color:var(--mu2);line-height:1.6}
+
+/* ── URL LIST ── */
+.url-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.url-card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px}
+.url-icon{font-size:18px;flex-shrink:0}
+.url-cat{font-size:9px;font-family:var(--mono);font-weight:700;padding:2px 7px;
+  border-radius:4px;background:rgba(59,130,246,.15);color:#93b4ff;flex-shrink:0}
+.url-body{flex:1;min-width:0}
+.url-name{font-size:13px;font-weight:700}
+.url-addr{font-size:11px;font-family:var(--mono);color:var(--accent);margin-top:1px;word-break:break-all}
+.url-desc{font-size:11px;color:var(--mu2);text-align:right;max-width:200px;line-height:1.4;flex-shrink:0}
+
+/* ── CLOSE PAGE ── */
+.close-page{background:linear-gradient(135deg,var(--navy),#1a2a60);
+  min-height:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:60px 40px}
+.close-title{font-size:40px;font-weight:900;color:#fff;margin-bottom:10px}
+.close-sub{font-size:15px;color:rgba(255,255,255,.5);margin-bottom:48px}
+.close-steps{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:720px}
+.cs-card{background:rgba(255,255,255,.07);border:1px solid rgba(59,130,246,.3);
+  border-radius:16px;padding:24px 20px;width:210px;text-align:center}
+.cs-num{width:40px;height:40px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  font-weight:900;color:#fff;margin:0 auto 12px}
+.cs-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px}
+.cs-body{font-size:11px;color:rgba(255,255,255,.5);line-height:1.6}
+.close-note{margin-top:28px;font-size:12px;color:rgba(255,255,255,.35)}
+
+/* ── WARN BOX ── */
+.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+  border-radius:10px;padding:10px 14px;font-size:12px;color:#fbbf24;
+  display:flex;gap:8px;align-items:flex-start;margin-bottom:16px}
+.tip{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);
+  border-radius:10px;padding:10px 14px;font-size:12px;color:#93c5fd;
+  display:flex;gap:8px;align-items:flex-start;margin-bottom:16px}
+.ok-box{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.2);
+  border-radius:10px;padding:10px 14px;font-size:12px;color:#6ee7b7;
+  display:flex;gap:8px;align-items:flex-start;margin-bottom:16px}
+
+/* ── MOBILE TOGGLE ── */
+.mb-menu-btn{display:none;position:fixed;bottom:20px;left:20px;z-index:100;
+  width:44px;height:44px;border-radius:50%;background:var(--accent);border:none;
+  color:#fff;font-size:18px;cursor:pointer;box-shadow:0 4px 16px rgba(59,130,246,.4)}
+@media(max-width:700px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset:0 auto 0 0;z-index:200;
+    transform:translateX(-100%);transition:transform .28s ease;width:80vw;max-width:280px}
+  .sidebar.open{transform:translateX(0)}
+  .mb-menu-btn{display:flex;align-items:center;justify-content:center}
+  .pc{padding:20px 20px}
+  .ph{padding:20px 20px 16px}
+  .kpi-row{grid-template-columns:1fr}
+  .card-grid,.node-grid,.faq-grid,.priority-box,.ob-grid,.pdca-grid{grid-template-columns:1fr}
+  .step-flow,.rec-rules,.pdca-circles,.rm-timeline{grid-template-columns:1fr 1fr}
+  .cover{padding:40px 28px}
+  .cover-title{font-size:36px}
+  .contact-grid{grid-template-columns:1fr}
+  .close-steps{flex-direction:column;align-items:center}
+}
+@media print{
+  .sidebar,.topbar,.mb-menu-btn{display:none!important}
+  .app{grid-template-columns:1fr}
+  .content{overflow:visible}
+  .page{display:block!important;page-break-after:always}
+  body{background:#fff;color:#111}
+}
+</style>
+</head>
+<body>
+
+<!-- MOBILE MENU -->
+<button class="mb-menu-btn" id="mbBtn" onclick="toggleMobileMenu()">☰</button>
+
+<div class="app">
+
+<!-- ══════════════════════════ SIDEBAR ══════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-brand">
+      <div class="sb-pip"></div>
+      <span class="sb-title">AIテレサポ プレイブック</span>
+    </div>
+    <div class="sb-sub">SoloptiLink 導入ガイド × アプクロ運用マニュアル<br>2026年版 | Partner向け統合版</div>
+  </div>
+
+  <div class="sb-prog">
+    <div class="prog-row">
+      <span class="prog-lbl">閲覧進捗</span>
+      <span class="prog-pct" id="progPct">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <nav class="sb-menu" id="sbMenu">
+    <!-- JS で描画 -->
+  </nav>
+
+  <div class="sb-foot">
+    <button class="btn-sm" onclick="window.print()">🖨️ 印刷</button>
+    <button class="btn-sm ac" onclick="markAllRead()">✅ 全既読</button>
+  </div>
+</aside>
+
+<!-- ══════════════════════════ MAIN ══════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <span class="tb-chapter" id="tbChapter">— / 15</span>
+    <span class="tb-title" id="tbTitle">AIテレサポ オペレーションプレイブック</span>
+    <div class="tb-nav">
+      <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" disabled>← 前へ</button>
+      <button class="nav-btn primary" id="nextBtn" onclick="navigate(1)">次へ →</button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- ── P0: 表紙 ── -->
+    <div class="page active" id="p0">
+      <div class="cover">
+        <div class="cover-tag">AIテレサポ v1.0</div>
+        <div class="cover-title">オペレーション<br>プレイブック</div>
+        <div class="cover-desc">SoloptiLink 導入ガイド × アプクロ運用マニュアル<br>スクリプト設計・録音・発信・改善まで全工程を1冊に集約した実務マニュアル</div>
+        <div class="cover-tags">
+          <span class="ctag">SoloptiLink × アプクロ</span>
+          <span class="ctag">Partner向け統合版</span>
+          <span class="ctag">2026年版</span>
+        </div>
+        <div class="cover-robot">🤖</div>
+      </div>
+    </div>
+
+    <!-- ── P1: 目次 ── -->
+    <div class="page" id="p1">
+      <div class="ph"><div class="ph-sect">CONTENTS</div><div class="ph-title">目次</div></div>
+      <div class="pc">
+        <div class="steps">
+          <div class="step-row"><div class="step-num">01</div><div class="step-body"><div class="step-title">サービス概要</div><div class="step-desc">AIテレアポとは何か・KPI・4ステップバリューチェーン</div></div></div>
+          <div class="step-row"><div class="step-num">02</div><div class="step-body"><div class="step-title">ログイン情報</div><div class="step-desc">管理画面・オペレーター画面へのアクセス情報（社外秘）</div></div></div>
+          <div class="step-row"><div class="step-num">03</div><div class="step-body"><div class="step-title">担当者連絡先</div><div class="step-desc">SoloptiLink チームへの連絡方法・ChatWork URL</div></div></div>
+          <div class="step-row"><div class="step-num">04</div><div class="step-body"><div class="step-title">オンボーディング手順</div><div class="step-desc">スタートまでの4ステップ（事前ガイド〜Kickoff MTG）</div></div></div>
+          <div class="step-row"><div class="step-num">05</div><div class="step-body"><div class="step-title">スクリプト設計</div><div class="step-desc">4つの基本ノード・キーワード設定・出口の優先順位</div></div></div>
+          <div class="step-row"><div class="step-num">06</div><div class="step-body"><div class="step-title">録音 & 発信準備</div><div class="step-desc">録音ルール・専用ツール・チャンネル設定手順</div></div></div>
+          <div class="step-row"><div class="step-num">07</div><div class="step-body"><div class="step-title">オペレーター対応</div><div class="step-desc">初期設定・転送通知・代電・通話終了フロー</div></div></div>
+          <div class="step-row"><div class="step-num">08</div><div class="step-body"><div class="step-title">3ヶ月ロードマップ</div><div class="step-desc">Kickoff → テスト架電 → 本格稼働 → ROI確認</div></div></div>
+          <div class="step-row"><div class="step-num">09</div><div class="step-body"><div class="step-title">PDCA 改善サイクル</div><div class="step-desc">通話ログ分析 → スクリプト改善のサイクル</div></div></div>
+          <div class="step-row"><div class="step-num">10</div><div class="step-body"><div class="step-title">FAQ & ツールURL集</div><div class="step-desc">よくある質問・全ツールのリンクまとめ</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P2: サービス概要 ── -->
+    <div class="page" id="p2">
+      <div class="ph"><div class="ph-sect">01 サービス概要</div><div class="ph-title">AIテレアポとは — バリューチェーン</div></div>
+      <div class="pc">
+        <div class="kpi-row">
+          <div class="kpi blue"><div class="kpi-n">10×</div><div class="kpi-l">生産性向上<br>（従来比）</div></div>
+          <div class="kpi navy"><div class="kpi-n">24h</div><div class="kpi-l">365日<br>稼働</div></div>
+          <div class="kpi green"><div class="kpi-n">¥2,400</div><div class="kpi-l">アポ1件あたりの<br>コスト（1%アポ率時）</div></div>
+        </div>
+        <div class="step-flow">
+          <div class="step-card"><div class="step-hd" style="background:#2563EB">STEP 1 AI初動架電</div><div class="step-body">大量リストへ自動架電・反応収集。24h/365日稼働で営業機会を最大化</div></div>
+          <div class="step-card"><div class="step-hd" style="background:#1E3A8A">STEP 2 自動スクリーニング</div><div class="step-body">見込み度をA/B/Cに自動分類。80%の無効顧客をフィルタリング</div></div>
+          <div class="step-card"><div class="step-hd" style="background:#059669">STEP 3 人間クロージング</div><div class="step-body">Aランクのみ担当者が対応。クロージングに集中できる環境を実現</div></div>
+          <div class="step-card"><div class="step-hd" style="background:#0891B2">STEP 4 データPDCA</div><div class="step-body">全会話データを分析しスクリプト継続改善。アポ率を週次で向上</div></div>
+        </div>
+        <div class="tip">💡 コアロジック: AIで架電量を数倍にしながら、受付突破後は人間が対応することでアポ品質を維持する</div>
+        <div class="card-grid">
+          <div class="card" style="border-color:rgba(5,150,105,.3)">
+            <div class="card-title"><span style="color:var(--green)">✅</span> CASE 01 担当者あり</div>
+            <div style="font-size:12px;color:var(--mu2);line-height:1.7">AIがオペレーターに転送。リアルタイムリスニング後、最適タイミングで代電。アポ獲得を最大化。</div>
+          </div>
+          <div class="card" style="border-color:rgba(220,38,38,.3)">
+            <div class="card-title"><span style="color:#f87171">❌</span> CASE 02 担当者不在 / 興味なし</div>
+            <div style="font-size:12px;color:var(--mu2);line-height:1.7">「かしこまりました。失礼いたします」とAIが応答して終話。人間の工数ゼロ。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P3: ログイン情報 ── -->
+    <div class="page" id="p3">
+      <div class="ph"><div class="ph-sect">02 ログイン情報</div><div class="ph-title">管理画面・オペレーター画面へのアクセス</div></div>
+      <div class="pc">
+        <div class="cred-warn">⚠️ この情報は社外秘です。スクリーンショット・転送・第三者共有は厳禁です。</div>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-hd-bar" style="background:#1E3A8A">⚙️ 管理画面（Admin）</div>
+            <table class="cred-table">
+              <tr><th>URL</th><td><a href="https://robot.topsaler.cc/user/login" style="color:var(--accent)">robot.topsaler.cc/user/login</a></td></tr>
+              <tr><th>ID</th><td>Apukuro</td></tr>
+              <tr><th>PW</th><td>Apukuro</td></tr>
+            </table>
+            <div class="cred-note">※ 架電設定・スクリプト管理・データ分析が可能</div>
+          </div>
+          <div class="card">
+            <div class="card-hd-bar" style="background:#1E3A8A">📞 オペレーター画面</div>
+            <table class="cred-table">
+              <tr><th>URL</th><td><a href="https://co.topsaler.cc/user/login/" style="color:var(--accent)">co.topsaler.cc/user/login</a></td></tr>
+              <tr><th>ID①</th><td>Apukuro-01</td></tr>
+              <tr><th>PW①</th><td>Apukuro@0123</td></tr>
+              <tr><th>ID②</th><td>Apukuro-02</td></tr>
+              <tr><th>PW②</th><td>Apukuro@0123</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="tip">💡 パスワードは担当者から変更指示がある場合があります。変更時は必ず社内の担当管理者へ共有してください。</div>
+      </div>
+    </div>
+
+    <!-- ── P4: 担当者連絡先 ── -->
+    <div class="page" id="p4">
+      <div class="ph"><div class="ph-sect">03 担当者連絡先</div><div class="ph-title">SoloptiLink チームへの連絡方法</div></div>
+      <div class="pc">
+        <div class="contact-grid">
+          <div class="contact-card"><div class="cc-icon" style="background:rgba(59,130,246,.2)">👤</div><div><div class="cc-role">代用担当者</div><div class="cc-name">李 継超 様</div><div class="cc-desc">日常的な運用・設定変更の問い合わせ先</div></div></div>
+          <div class="contact-card"><div class="cc-icon" style="background:rgba(30,58,138,.3)">💼</div><div><div class="cc-role">経理関連</div><div class="cc-name">渡部 結菜 様</div><div class="cc-desc">請求書・支払い・経理処理に関する窓口</div></div></div>
+          <div class="contact-card"><div class="cc-icon" style="background:rgba(5,150,105,.2)">🤝</div><div><div class="cc-role">紹介元企業</div><div class="cc-name">小貫 太秀 様</div><div class="cc-desc">契約・サービス全体の橋渡し担当</div></div></div>
+          <div class="contact-card"><div class="cc-icon" style="background:rgba(217,119,6,.2)">🎯</div><div><div class="cc-role">CS担当</div><div class="cc-name">山田 晃路 様 / 青木 慎悟 様</div><div class="cc-desc">カスタマーサクセス・オンボーディング支援</div></div></div>
+        </div>
+        <div class="cw-box">💬 <div><div style="font-weight:700;margin-bottom:2px">ChatWork: （株）アプクロ × AIテレサポご案内</div><div style="font-size:11px"><a href="https://www.chatwork.com/#!rid418995000" style="color:var(--accent)">https://www.chatwork.com/#!rid418995000</a></div></div></div>
+      </div>
+    </div>
+
+    <!-- ── P5: オンボーディング ── -->
+    <div class="page" id="p5">
+      <div class="ph"><div class="ph-sect">04 オンボーディング手順</div><div class="ph-title">スタートまでの4ステップ</div></div>
+      <div class="pc">
+        <div class="ob-grid">
+          <div class="ob-card"><div class="ob-num" style="background:#3B82F6"><span style="background:rgba(255,255,255,.2);border-radius:5px;padding:2px 8px;font-size:16px">01</span> オンボーディング事前ガイドを確認</div>
+            <div class="ob-body"><div class="ob-check">初回オンボーディング事前ガイドURLを開く</div><div class="ob-check">資料の内容を一読する</div>
+            <div class="ob-link">docs.google.com/document/d/1TeP-CyDEzCwzU4edbAS8TPsujB0n5_sKNeADdbzuh2A/</div></div></div>
+          <div class="ob-card"><div class="ob-num" style="background:#1E3A8A"><span style="background:rgba(255,255,255,.2);border-radius:5px;padding:2px 8px;font-size:16px">02</span> アンケートに回答</div>
+            <div class="ob-body"><div class="ob-check">ベースAIスクリプト作成のためのアンケートに回答</div><div class="ob-check">自社商材・ターゲット情報を正確に記入</div>
+            <div class="ob-link">同ドキュメント内 tab=bqf5ckb6151p</div></div></div>
+          <div class="ob-card"><div class="ob-num" style="background:#059669"><span style="background:rgba(255,255,255,.2);border-radius:5px;padding:2px 8px;font-size:16px">03</span> チュートリアル講座を受講</div>
+            <div class="ob-body"><div class="ob-check">管理画面の使い方・架電設定を学習</div><div class="ob-check">オペレーター画面の操作を確認</div></div></div>
+          <div class="ob-card"><div class="ob-num" style="background:#D97706"><span style="background:rgba(255,255,255,.2);border-radius:5px;padding:2px 8px;font-size:16px">04</span> Kickoff ミーティング</div>
+            <div class="ob-body"><div class="ob-check">SoloptiLink担当者とKickoff（Week 1）</div><div class="ob-check">KPI設定・ターゲット・スクリプト最終確認</div>
+            <div class="ob-link">ChatWorkまたは担当者から日程調整連絡</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P6: スクリプト設計 ノード ── -->
+    <div class="page" id="p6">
+      <div class="ph"><div class="ph-sect">05 スクリプト設計</div><div class="ph-title">4つの基本ノード構造</div></div>
+      <div class="pc">
+        <div class="node-grid">
+          <div class="node-card"><span class="node-badge nb-normal">通常ノード</span>
+            <div class="node-name">💬 もしもし</div>
+            <div class="node-settings">
+              <div class="ns"><div class="ns-dot" style="background:#3B82F6"></div><div class="ns-val">音声: （3秒空白音）もしもし</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#3B82F6"></div><div class="ns-val">中断許可: ON</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#3B82F6"></div><div class="ns-val">用途: AI第一声 / 留守電スキップ</div></div>
+            </div></div>
+          <div class="node-card"><span class="node-badge nb-normal">通常ノード</span>
+            <div class="node-name">📋 自己紹介</div>
+            <div class="node-settings">
+              <div class="ns"><div class="ns-dot" style="background:#1E3A8A"></div><div class="ns-val">音声: 社名・担当者確認の一文</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#1E3A8A"></div><div class="ns-val">中断許可: <strong style="color:#f87171">OFF ← 必須</strong></div></div>
+              <div class="ns"><div class="ns-dot" style="background:#1E3A8A"></div><div class="ns-val">用途: 用件を最後まで伝えきる</div></div>
+            </div></div>
+          <div class="node-card"><span class="node-badge nb-jump">ジャンプノード</span>
+            <div class="node-name">🔀 オペレーターに転送</div>
+            <div class="node-settings">
+              <div class="ns"><div class="ns-dot" style="background:#059669"></div><div class="ns-val">次のステップ: 転送</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#059669"></div><div class="ns-val">転送設定: ON</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#059669"></div><div class="ns-val">末尾: <strong style="color:#fbbf24">1分の空白音（代電待機）</strong></div></div>
+            </div></div>
+          <div class="node-card"><span class="node-badge nb-jump">ジャンプノード</span>
+            <div class="node-name">🔴 お断り</div>
+            <div class="node-settings">
+              <div class="ns"><div class="ns-dot" style="background:#DC2626"></div><div class="ns-val">次のステップ: 切断</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#DC2626"></div><div class="ns-val">中断許可: OFF</div></div>
+              <div class="ns"><div class="ns-dot" style="background:#DC2626"></div><div class="ns-val">音声: かしこまりました。失礼いたします</div></div>
+            </div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P7: キーワード ── -->
+    <div class="page" id="p7">
+      <div class="ph"><div class="ph-sect">05 スクリプト設計</div><div class="ph-title">キーワード設定と出口の優先順位</div></div>
+      <div class="pc">
+        <div class="kw-list">
+          <div class="kw-card"><div class="kw-hd"><div class="kw-dot" style="background:#059669"></div><div class="kw-name">✅ 私が担当者</div></div><div class="kw-words">私です / 私が担当者 / 僕が担当者 / 担当者は私 / オーナーです / 私がオーナー / オーナーになります</div></div>
+          <div class="kw-card"><div class="kw-hd"><div class="kw-dot" style="background:#DC2626"></div><div class="kw-name">🚫 興味なし</div></div><div class="kw-words">お断り / 興味な / 興味無 / 興味ありません / 結構です</div></div>
+          <div class="kw-card"><div class="kw-hd"><div class="kw-dot" style="background:#D97706"></div><div class="kw-name">⚠️ 解析不能（受け皿）</div></div><div class="kw-words">上記いずれにもヒットしない発言すべて → 解析不能プロセスへ移行</div></div>
+        </div>
+        <div class="priority-box">
+          <div class="pbox bad"><div class="pb-lbl bad">❌ 悪い設定</div><div class="pb-body">優先①: 私が担当者<br>優先②: 興味なし<br><br>「私が担当ですがお断りです」<br>→「私が担当者」ヒット → 転送❌</div></div>
+          <div class="pbox good"><div class="pb-lbl good">✅ 正しい設定</div><div class="pb-body">優先①: 興味なし<br>優先②: 私が担当者<br><br>「私が担当ですがお断りです」<br>→「興味なし」ヒット → 断り✅</div></div>
+        </div>
+        <div class="warn">⚠️ 左上にあるほど優先度が高い。複合発言（担当+拒否）に備え「興味なし」を必ず上位にする。</div>
+      </div>
+    </div>
+
+    <!-- ── P8: 録音 & 発信 ── -->
+    <div class="page" id="p8">
+      <div class="ph"><div class="ph-sect">06 録音 & 発信準備</div><div class="ph-title">録音ルール・ツール・チャンネル設定</div></div>
+      <div class="pc">
+        <div class="rec-rules">
+          <div class="rr"><div class="rr-icon">🎵</div><div class="rr-title">ファイル形式</div><div class="rr-body">WAV 推奨<br>(44100Hz / モノラル)<br>MP3も可（128kbps）</div></div>
+          <div class="rr"><div class="rr-icon">⏱️</div><div class="rr-title">無音トリム</div><div class="rr-body">先頭・末尾は 0.1秒 残す<br>アプリで自動カット<br>短すぎると認識エラーに</div></div>
+          <div class="rr"><div class="rr-icon">⚡</div><div class="rr-title">転送ノードのみ</div><div class="rr-body">末尾に 1分の空白音<br>オペレーター代電待機<br>時間として必須</div></div>
+          <div class="rr"><div class="rr-icon">💾</div><div class="rr-title">アップロード</div><div class="rr-body">録音アプリで録音→DL<br>管理画面ノード編集から<br>WAVをアップロード</div></div>
+        </div>
+        <div class="tool-box" style="margin-bottom:20px">
+          <div class="tool-name">🎙️ 専用録音ツール（ブラウザで動作・インストール不要）</div>
+          <div class="tool-url"><a href="https://apclo-dev.github.io/aitelesa-recorder/" style="color:var(--accent)">https://apclo-dev.github.io/aitelesa-recorder/</a></div>
+          <div class="tool-feat">WAV/MP3録音 · 無音トリム自動 · 階層フォルダ管理 · IndexedDB永続保存 · マイク許可は初回のみ</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--mu2)">チャンネル設定 5ステップ</div>
+        <div class="steps">
+          <div class="step-row"><div class="step-num">①</div><div class="step-body"><div class="step-title">管理者の同時数を 0 にする</div><div class="step-desc">管理者アカウントの同時数を0に変更。全チャンネルをオペレーターに振り分ける。</div></div></div>
+          <div class="step-row"><div class="step-num">②</div><div class="step-body"><div class="step-title">オペレーターに 3以上 を設定</div><div class="step-desc">ユーザー編集 → 同時数 3〜8（推奨）に設定。0のままだと発信不可。</div></div></div>
+          <div class="step-row"><div class="step-num">③</div><div class="step-body"><div class="step-title">発信時間帯: 0:00〜23:59</div><div class="step-desc">開始・停止は手動で行う。時間制限は設けない推奨。</div></div></div>
+          <div class="step-row"><div class="step-num">④</div><div class="step-body"><div class="step-title">タスクを作成する</div><div class="step-desc">スクリプト・回線・所有者を設定。チャンネル数が表示されていることを確認。</div></div></div>
+          <div class="step-row"><div class="step-num">⑤</div><div class="step-body"><div class="step-title">電話番号リストをアップロード</div><div class="step-desc">テンプレDL → A列に電話番号（ハイフンなし・文字列形式）→ アップロード。</div></div></div>
+        </div>
+        <div class="warn">⚠️ 管理者アカウントのチャンネルが残ったままだと、オペレーターに発信が届かない最頻出エラー</div>
+      </div>
+    </div>
+
+    <!-- ── P9: オペレーター対応 ── -->
+    <div class="page" id="p9">
+      <div class="ph"><div class="ph-sect">07 オペレーター対応</div><div class="ph-title">転送 → 代電 → 通話終了フロー</div></div>
+      <div class="pc">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">🔧 初期設定（初回のみ）</div>
+            <div class="steps">
+              <div class="step-row" style="padding:8px 12px"><div class="step-num" style="font-size:10px;width:18px;height:18px;border-radius:5px">URL</div><div class="step-body"><div class="step-title" style="font-size:12px">オペレーター画面</div><div class="step-desc"><a href="https://co.topsaler.cc/user/login/" style="color:var(--accent)">co.topsaler.cc/user/login</a><br>※ 管理画面とは別アカウント</div></div></div>
+              <div class="step-row" style="padding:8px 12px"><div class="step-num" style="background:#059669;font-size:10px;width:18px;height:18px;border-radius:5px">ON</div><div class="step-body"><div class="step-title" style="font-size:12px">転送後タスク一時停止</div><div class="step-desc">ON に設定（転送後に発信自動停止）</div></div></div>
+              <div class="step-row" style="padding:8px 12px"><div class="step-num" style="background:#7C3AED;font-size:10px;width:18px;height:18px;border-radius:5px">+</div><div class="step-body"><div class="step-title" style="font-size:12px">Chrome拡張機能</div><div class="step-desc">転送通知をブラウザ通知で受け取り可能</div></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">📞 通話フロー</div>
+            <div class="tl">
+              <div class="tl-item"><div class="tl-dot"></div><div class="tl-who">AI</div><div class="tl-text">「もしもし」→「自己紹介」を再生</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#94a3b8"></div><div class="tl-who" style="color:var(--mu2)">相手</div><div class="tl-text">担当者確認の返答</div></div>
+              <div class="tl-item"><div class="tl-dot"></div><div class="tl-who">AI</div><div class="tl-text">キーワード判定 → 転送 or 断り</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#D97706"></div><div class="tl-who" style="color:#fbbf24">通知</div><div class="tl-text">オペレーター画面に転送通知が届く</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#059669"></div><div class="tl-who" style="color:#6ee7b7">リスニング</div><div class="tl-text">AIと相手の通話をリアルタイム傍聴</div></div>
+              <div class="tl-item"><div class="tl-dot"></div><div class="tl-who">代電</div><div class="tl-text">「電話を代わる」ボタンでバトンタッチ</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#94a3b8"></div><div class="tl-who" style="color:var(--mu2)">終了後</div><div class="tl-text">見込み度 A/B/C/D を設定して提出</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P10: 3ヶ月ロードマップ ── -->
+    <div class="page" id="p10">
+      <div class="ph"><div class="ph-sect">08 3ヶ月 運用ロードマップ</div><div class="ph-title">Kickoff → テスト架電 → 本格稼働 → ROI確認</div></div>
+      <div class="pc">
+        <div style="display:flex;align-items:center;gap:0;margin-bottom:20px;overflow:hidden;border-radius:8px">
+          <div style="flex:1;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);padding:8px 14px;font-size:11px;font-weight:700;color:#93c5fd">Week 1<br><span style="font-size:10px;color:var(--mu2);font-weight:400">Kickoff</span></div>
+          <div style="color:var(--mu);padding:0 8px">→</div>
+          <div style="flex:1;background:rgba(30,58,138,.2);border:1px solid rgba(59,130,246,.2);padding:8px 14px;font-size:11px;font-weight:700;color:#93c5fd">Week 2-4<br><span style="font-size:10px;color:var(--mu2);font-weight:400">テスト架電</span></div>
+          <div style="color:var(--mu);padding:0 8px">→</div>
+          <div style="flex:1;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.25);padding:8px 14px;font-size:11px;font-weight:700;color:#6ee7b7">Month 2<br><span style="font-size:10px;color:var(--mu2);font-weight:400">本格稼働</span></div>
+          <div style="color:var(--mu);padding:0 8px">→</div>
+          <div style="flex:1;background:rgba(8,145,178,.15);border:1px solid rgba(8,145,178,.25);padding:8px 14px;font-size:11px;font-weight:700;color:#67e8f9">Month 3<br><span style="font-size:10px;color:var(--mu2);font-weight:400">成果・ROI確認</span></div>
+        </div>
+        <div class="rm-timeline">
+          <div class="rm-phase"><div class="rm-hd" style="background:#2563EB">導入フェーズ</div><div class="rm-body">
+            <div class="rm-item">ヒアリング・ターゲット設定</div>
+            <div class="rm-item">初期スクリプト作成</div>
+            <div class="rm-item">KPI・成果目標の設定</div>
+            <div class="rm-item">管理画面セットアップ</div>
+          </div></div>
+          <div class="rm-phase"><div class="rm-hd" style="background:#1E3A8A">テスト・最適化</div><div class="rm-body">
+            <div class="rm-item">少量テスト架電（〜 500件）</div>
+            <div class="rm-item">顧客反応データ分析</div>
+            <div class="rm-item">スクリプト改善・音声調整</div>
+            <div class="rm-item">本格稼働向けA/Bテスト</div>
+          </div></div>
+          <div class="rm-phase"><div class="rm-hd" style="background:#059669">本格稼働・成果創出</div><div class="rm-body">
+            <div class="rm-item">大量架電開始（月 1〜3万件）</div>
+            <div class="rm-item">AIスクリーニング→人間クロージング</div>
+            <div class="rm-item">週次KPIレポート確認・改善</div>
+            <div class="rm-item">3ヶ月でROI確認・アポ単価算出</div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P11: PDCA改善 ── -->
+    <div class="page" id="p11">
+      <div class="ph"><div class="ph-sect">09 PDCA改善サイクル</div><div class="ph-title">通話ログ分析 → スクリプト改善</div></div>
+      <div class="pc">
+        <div class="pdca-grid">
+          <div class="pdca-circles">
+            <div class="pdca-q" style="background:#1E3A8A"><div class="pdca-letter">P</div><div class="pdca-word">PLAN</div><div class="pdca-sub">キーワード設計<br>スクリプト構成</div></div>
+            <div class="pdca-q" style="background:#059669"><div class="pdca-letter">D</div><div class="pdca-word">DO</div><div class="pdca-sub">発信実行<br>通話録音</div></div>
+            <div class="pdca-q" style="background:#D97706"><div class="pdca-letter">C</div><div class="pdca-word">CHECK</div><div class="pdca-sub">ログ・文字起こし<br>解析不能確認</div></div>
+            <div class="pdca-q" style="background:#DC2626"><div class="pdca-letter">A</div><div class="pdca-word">ACT</div><div class="pdca-sub">キーワード追加<br>優先順位修正</div></div>
+          </div>
+          <div class="imp-steps">
+            <div class="imp-step"><div class="imp-step-hd">📋 通話ログを確認</div><div class="imp-step-body">発信タスク → 通話詳細 → 通話記録で文字起こしを確認。解析不能になった発言を特定する。</div></div>
+            <div class="imp-step"><div class="imp-step-hd">🔤 キーワードを追加</div><div class="imp-step-body">「私がオーナーです」など未登録表現を「私が担当者」グループに追加。正規表現も活用。</div></div>
+            <div class="imp-step"><div class="imp-step-hd">🗂️ 解析不能プロセス作成</div><div class="imp-step-body">どの出口にもヒットしない発言の受け皿プロセスを作成。再質問で担当者確認を促す。</div></div>
+            <div class="imp-step"><div class="imp-step-hd">↕️ 優先順位を調整</div><div class="imp-step-body">複合発言（担当+拒否）への対応で「興味なし」を「私が担当者」より上位に設定する。</div></div>
+          </div>
+        </div>
+        <div class="ok-box">✅ 編集後は「保存」と「公開」の両方を必ず押す。公開しないと変更が反映されない。</div>
+      </div>
+    </div>
+
+    <!-- ── P12: FAQ ── -->
+    <div class="page" id="p12">
+      <div class="ph"><div class="ph-sect">10 FAQ & ツールURL集</div><div class="ph-title">現場担当者向け FAQ</div></div>
+      <div class="pc">
+        <div class="faq-grid">
+          <div class="faq"><div class="faq-q">Q 顧客にAIだとバレませんか？</div><div class="faq-a">人間の音声を録音して使用。業界別スクリプトでカスタマイズしており、自然な受け答えが可能です。</div></div>
+          <div class="faq"><div class="faq-q">Q 人間のオペレーターは不要になりますか？</div><div class="faq-a">AIはスクリーニングを担当、有望な見込み客のみ担当者に引き継ぎます。クロージングは人間が対応します。</div></div>
+          <div class="faq"><div class="faq-q">Q 1日に何件発信できますか？</div><div class="faq-a">最大8回線同時架電。1名で月3〜10万コールが可能（従来比約10倍）。24時間365日稼働します。</div></div>
+          <div class="faq"><div class="faq-q">Q 架電結果はどこで確認できますか？</div><div class="faq-a">管理画面（robot.topsaler.cc）でリアルタイムにデータ確認・分析が可能です。週次レポートも提供されます。</div></div>
+          <div class="faq"><div class="faq-q">Q 問題が発生したときの連絡先は？</div><div class="faq-a">ChatWork「（株）アプクロ×AIテレサポご案内」にて担当者（李様・山田様・青木様）へ即座に連絡してください。</div></div>
+          <div class="faq"><div class="faq-q">Q スクリプトはいつ変更できますか？</div><div class="faq-a">管理画面から随時変更可能。SoloptiLink担当者との月次MTGでもスクリプト改善の伴走サポートがあります。</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P13: URL集 ── -->
+    <div class="page" id="p13">
+      <div class="ph"><div class="ph-sect">10 FAQ & ツールURL集</div><div class="ph-title">すぐに使えるURLをまとめました</div></div>
+      <div class="pc">
+        <div class="url-list">
+          <div class="url-card"><div class="url-icon">🎙️</div><div class="url-cat">録音ツール</div><div class="url-body"><div class="url-name">AIテレサポ専用録音アプリ</div><div class="url-addr"><a href="https://apclo-dev.github.io/aitelesa-recorder/" style="color:var(--accent)">https://apclo-dev.github.io/aitelesa-recorder/</a></div></div><div class="url-desc">WAV/MP3 · 階層フォルダ管理 · デバイス永続保存</div></div>
+          <div class="url-card"><div class="url-icon">⚙️</div><div class="url-cat">管理画面</div><div class="url-body"><div class="url-name">スクリプト編集（Admin）</div><div class="url-addr"><a href="https://robot.topsaler.cc/user/login" style="color:var(--accent)">https://robot.topsaler.cc/user/login</a></div></div><div class="url-desc">ノード作成 · キーワード設定 · 公開</div></div>
+          <div class="url-card"><div class="url-icon">📞</div><div class="url-cat">オペレーター</div><div class="url-body"><div class="url-name">オペレーター待機画面</div><div class="url-addr"><a href="https://co.topsaler.cc/user/login/" style="color:var(--accent)">https://co.topsaler.cc/user/login/</a></div></div><div class="url-desc">転送受け · リスニング · 代電</div></div>
+          <div class="url-card"><div class="url-icon">📊</div><div class="url-cat">発信タスク</div><div class="url-body"><div class="url-name">発信タスク管理</div><div class="url-addr"><a href="https://robot.topsaler.cc/tasks/current" style="color:var(--accent)">https://robot.topsaler.cc/tasks/current</a></div></div><div class="url-desc">タスク作成 · リストアップロード</div></div>
+          <div class="url-card"><div class="url-icon">👤</div><div class="url-cat">アカウント</div><div class="url-body"><div class="url-name">ユーザー設定（チャンネル数）</div><div class="url-addr"><a href="https://robot.topsaler.cc/account/center" style="color:var(--accent)">https://robot.topsaler.cc/account/center</a></div></div><div class="url-desc">チャンネル数設定（3以上推奨）</div></div>
+          <div class="url-card"><div class="url-icon">💬</div><div class="url-cat">ChatWork</div><div class="url-body"><div class="url-name">SoloptiLink サポートチャット</div><div class="url-addr"><a href="https://www.chatwork.com/#!rid418995000" style="color:var(--accent)">https://www.chatwork.com/#!rid418995000</a></div></div><div class="url-desc">李様 · 山田様 · 青木様へ即時連絡</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── P14: クローズ ── -->
+    <div class="page" id="p14">
+      <div class="close-page">
+        <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:8px;font-family:var(--mono);letter-spacing:3px">GET STARTED</div>
+        <div class="close-title">今日から始める<br>3ステップ</div>
+        <div class="close-sub">属人化した営業から脱却し、データドリブンな再現性のある営業体制へ</div>
+        <div class="close-steps">
+          <div class="cs-card"><div class="cs-num">1</div><div class="cs-title">事前ガイド確認<br>& アンケート回答</div><div class="cs-body">SoloptiLinkガイドURLを開く<br>商材・ターゲット情報を記入</div></div>
+          <div class="cs-card"><div class="cs-num">2</div><div class="cs-title">録音 & スクリプト<br>作成</div><div class="cs-body">録音アプリで音声収録<br>管理画面でノード4つを設定</div></div>
+          <div class="cs-card"><div class="cs-num">3</div><div class="cs-title">発信 → 改善を<br>毎週回す</div><div class="cs-body">タスク作成 → 発信開始<br>毎週ログを見てキーワード更新</div></div>
+        </div>
+        <div class="close-note">ご不明な点はChatWorkにて担当者（李様・山田様・青木様）へご連絡ください</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════════════════════════
+//  MENU DATA
+// ════════════════════════════════════════════════════════
+const PAGES = [
+  { id:'p0',  num:'—',  icon:'🏠', name:'表紙',           desc:'プレイブック概要',                   section:'intro' },
+  { id:'p1',  num:'—',  icon:'📋', name:'目次',           desc:'全10章の構成一覧',                   section:'intro' },
+  { id:'p2',  num:'01', icon:'📡', name:'サービス概要',    desc:'KPI・4ステップバリューチェーン',     section:'main'  },
+  { id:'p3',  num:'02', icon:'🔐', name:'ログイン情報',    desc:'管理画面・オペレーター画面',         section:'main'  },
+  { id:'p4',  num:'03', icon:'👥', name:'担当者連絡先',    desc:'SoloptiLink チーム連絡先',           section:'main'  },
+  { id:'p5',  num:'04', icon:'🚀', name:'オンボーディング', desc:'スタートまでの4ステップ',           section:'main'  },
+  { id:'p6',  num:'05', icon:'🧩', name:'スクリプト設計',  desc:'4つの基本ノード構造',               section:'main'  },
+  { id:'p7',  num:'05', icon:'🎯', name:'キーワード優先順位', desc:'設定と出口の優先順位ルール',      section:'main'  },
+  { id:'p8',  num:'06', icon:'🎙️', name:'録音 & 発信準備', desc:'録音ツール・チャンネル設定',        section:'main'  },
+  { id:'p9',  num:'07', icon:'📞', name:'オペレーター対応', desc:'転送・代電・通話フロー',            section:'main'  },
+  { id:'p10', num:'08', icon:'📅', name:'3ヶ月ロードマップ', desc:'Kickoff→テスト→本格稼働→ROI',   section:'main'  },
+  { id:'p11', num:'09', icon:'🔄', name:'PDCA改善',        desc:'ログ分析・スクリプト改善サイクル',   section:'main'  },
+  { id:'p12', num:'10', icon:'❓', name:'FAQ',             desc:'現場担当者向けよくある質問',         section:'main'  },
+  { id:'p13', num:'10', icon:'🔗', name:'ツールURL集',     desc:'全ツールのリンクまとめ',             section:'main'  },
+  { id:'p14', num:'—',  icon:'✅', name:'はじめの3ステップ', desc:'今日から始めるアクション',         section:'outro' },
+];
+
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+let cur = 0;
+const readPages = new Set();
+
+// ════════════════════════════════════════════════════════
+//  RENDER MENU
+// ════════════════════════════════════════════════════════
+function renderMenu() {
+  const nav = document.getElementById('sbMenu');
+  const sections = { intro:'はじめに', main:'本編', outro:'まとめ' };
+  let lastSection = null;
+  let html = '';
+  PAGES.forEach((p, i) => {
+    if (p.section !== lastSection) {
+      html += `<div class="menu-section-lbl">${sections[p.section]}</div>`;
+      lastSection = p.section;
+    }
+    const active = cur === i;
+    const done   = readPages.has(i);
+    html += `<div class="menu-item${active?' active':''}${done?' done':''}" onclick="goTo(${i})">
+      <div class="menu-num">${p.num}</div>
+      <span class="menu-icon">${p.icon}</span>
+      <div class="menu-body">
+        <div class="menu-name">${p.name}</div>
+        <div class="menu-desc">${p.desc}</div>
+      </div>
+      <span class="menu-ck">✓</span>
+    </div>`;
+  });
+  nav.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════
+function goTo(idx) {
+  if (idx < 0 || idx >= PAGES.length) return;
+
+  // hide current
+  document.getElementById(PAGES[cur].id)?.classList.remove('active');
+  readPages.add(cur);
+  cur = idx;
+
+  // show new
+  document.getElementById(PAGES[cur].id)?.classList.add('active');
+  document.getElementById('content')?.scrollTo(0, 0);
+  readPages.add(cur);
+
+  // topbar
+  document.getElementById('tbChapter').textContent = `${cur+1} / ${PAGES.length}`;
+  document.getElementById('tbTitle').textContent   = PAGES[cur].name;
+
+  // nav buttons
+  document.getElementById('prevBtn').disabled = cur === 0;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = false;
+  nextBtn.textContent = cur === PAGES.length-1 ? '最初に戻る →' : '次へ →';
+  nextBtn.className  = cur === PAGES.length-1 ? 'nav-btn' : 'nav-btn primary';
+
+  updateProgress();
+  renderMenu();
+  closeMobileMenu();
+}
+
+function navigate(dir) {
+  if (dir === 1 && cur === PAGES.length-1) { goTo(0); return; }
+  goTo(cur + dir);
+}
+
+// ════════════════════════════════════════════════════════
+//  PROGRESS
+// ════════════════════════════════════════════════════════
+function updateProgress() {
+  const pct = Math.round(readPages.size / PAGES.length * 100);
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progPct').textContent  = pct + '%';
+}
+function markAllRead() {
+  PAGES.forEach((_, i) => readPages.add(i));
+  updateProgress(); renderMenu();
+  showToast('✅ 全ページを既読にしました');
+}
+
+// ════════════════════════════════════════════════════════
+//  MOBILE
+// ════════════════════════════════════════════════════════
+function toggleMobileMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+function closeMobileMenu()  { document.getElementById('sidebar').classList.remove('open'); }
+
+// ════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;border:1px solid rgba(52,211,153,.4);color:#6ee7b7;padding:8px 18px;border-radius:9px;font-size:12px;z-index:500;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.5)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ════════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════════
+goTo(0);
+</script>
+</body>
+</html>
