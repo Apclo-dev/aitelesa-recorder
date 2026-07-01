@@ -3,1421 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>録音作業チェックリスト — AIテレサポ</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>AIテレサポ ツールポータル</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0c0f1a;--sf:#141826;--s2:#1c2233;--s3:#232b40;
-  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.13);
-  --ac:#4f7cff;--gr:#22c57a;--or:#f97316;--yw:#f59e0b;--rd:#ef4444;--pu:#a855f7;
-  --tx:#e4e8f0;--mu:#5a6480;--mu2:#8892aa;
-  --d0:#a78bfa;--d1:#60a5fa;--d2:#34d399;--d3:#fbbf24;
-  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans JP',sans-serif;
+  --bg:#0a0e1a;--sf:#111827;--s2:#1a2234;--bd:rgba(255,255,255,.08);
+  --ac:#4f7cff;--gr:#22c57a;--tx:#e2e8f0;--mu:#64748b;--mu2:#94a3b8;
+  --sans:'Noto Sans JP',sans-serif;
 }
-body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--sans)}
 
-/* ── HEADER ── */
-.hd{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 20px;
-  position:sticky;top:0;z-index:200;display:flex;align-items:center;height:52px;gap:10px}
-.hd-logo{display:flex;align-items:center;gap:7px;font-weight:900;font-size:13px;flex-shrink:0}
-.pip{width:7px;height:7px;border-radius:50%;background:var(--ac)}
-.hd-dept{background:var(--s2);border:1px solid var(--bd2);border-radius:7px;
-  padding:5px 10px;color:var(--tx);font-family:var(--sans);font-size:12px;
-  outline:none;cursor:pointer;flex:1;max-width:220px}
-.hd-dept:focus{border-color:var(--ac)}
-.hd-r{display:flex;gap:5px;margin-left:auto}
-.btn{padding:5px 12px;border-radius:7px;font-size:11px;font-weight:700;
-  font-family:var(--sans);cursor:pointer;border:1px solid var(--bd2);
-  background:var(--s2);color:var(--mu2);transition:all .15s;white-space:nowrap}
-.btn:hover{color:var(--tx);border-color:var(--ac)}
-.btn.ac{background:var(--ac);border-color:var(--ac);color:#fff}.btn.ac:hover{opacity:.88}
-.btn.gr{background:rgba(34,197,122,.15);border-color:rgba(34,197,122,.3);color:var(--gr)}.btn.gr:hover{background:var(--gr);color:#000}
-.btn.rd{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#f87171}.btn.rd:hover{background:var(--rd);color:#fff}
-.btn.pu{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3);color:#c084fc}.btn.pu:hover{background:var(--pu);color:#fff}
-
-/* ── SYNC ── */
-.sb{background:var(--s2);border-bottom:1px solid var(--bd);
-  padding:4px 20px;display:flex;align-items:center;gap:7px;font-size:10px}
-.sd{width:5px;height:5px;border-radius:50%;background:var(--mu);flex-shrink:0;transition:background .3s}
-.sd.ok{background:var(--gr);box-shadow:0 0 4px rgba(34,197,122,.6)}
-.sd.sy{background:var(--yw);animation:p1 1s infinite}
-.sd.er{background:var(--rd)}
-@keyframes p1{0%,100%{opacity:1}50%{opacity:.3}}
-.st{color:var(--mu2)}.sm{color:var(--mu);font-family:var(--mono);margin-left:auto}
-
-/* ── LAYOUT ── */
-.layout{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 76px)}
-
-/* ── SIDEBAR ── */
-.sidebar{background:var(--sf);border-right:1px solid var(--bd);
-  display:flex;flex-direction:column;overflow:hidden}
-.sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--bd)}
-.sb-stats{display:flex;gap:6px;margin-bottom:10px}
-.sstat{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;
-  padding:7px;text-align:center}
-.sstat-n{font-size:18px;font-weight:900;font-family:var(--mono);line-height:1}
-.sstat-l{font-size:9px;color:var(--mu2);margin-top:1px}
-.sn-ac{color:var(--ac)}.sn-gr{color:var(--gr)}.sn-or{color:var(--or)}
-.prog-t{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin-bottom:4px}
-.prog-f{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ac),var(--gr));transition:width .4s}
-.prog-l{font-size:10px;color:var(--mu2);font-family:var(--mono);text-align:right}
-
-/* tree */
-.tree-wrap{flex:1;overflow-y:auto;padding:6px 0}
-.tree-wrap::-webkit-scrollbar{width:3px}
-.tree-wrap::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
-.tn{position:relative}
-.tn-row{display:flex;align-items:center;gap:5px;padding:5px 10px;
-  border-radius:7px;margin:1px 6px;cursor:pointer;transition:background .12s;min-width:0}
-.tn-row:hover{background:rgba(255,255,255,.04)}
-.tn.sel>.tn-row{background:rgba(79,124,255,.18)}
-.tn-chev{font-size:8px;color:var(--mu);transition:transform .2s;flex-shrink:0;width:10px}
-.tn.open>.tn-row .tn-chev{transform:rotate(90deg)}
-.tn-icon{font-size:12px;flex-shrink:0}
-.d0>.tn-row .tn-icon{color:var(--d0)}
-.d1>.tn-row .tn-icon{color:var(--d1)}
-.d2>.tn-row .tn-icon{color:var(--d2)}
-.d3>.tn-row .tn-icon{color:var(--d3)}
-.tn-lbl{font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tn-cnt{font-size:9px;font-family:var(--mono);color:var(--mu);background:var(--s2);
-  padding:1px 5px;border-radius:3px;flex-shrink:0}
-.tn-done{font-size:9px;font-family:var(--mono);color:var(--gr);flex-shrink:0}
-.tn-add{opacity:0;background:none;border:none;cursor:pointer;color:var(--mu);
-  font-size:11px;padding:2px 3px;border-radius:3px;flex-shrink:0}
-.tn-row:hover .tn-add{opacity:1}
-.tn-add:hover{background:rgba(79,124,255,.2);color:var(--ac)}
-.tn-children{padding-left:14px}
-.tn-children.hid{display:none}
-.sb-foot{padding:10px 12px;border-top:1px solid var(--bd)}
-.btn-nw{width:100%;padding:8px;background:rgba(79,124,255,.12);
-  border:1px solid rgba(79,124,255,.3);border-radius:8px;color:#93b4ff;
-  font-size:12px;font-weight:700;font-family:var(--sans);cursor:pointer}
-.btn-nw:hover{background:var(--ac);color:#fff}
-
-/* ── MAIN ── */
-.main{display:flex;flex-direction:column;overflow:hidden}
-.bc{padding:10px 20px;border-bottom:1px solid var(--bd);background:var(--sf);
-  display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mu);flex-wrap:wrap}
-.bc-sep{color:var(--bd2)}
-.bc-i{cursor:pointer;color:var(--mu2)}.bc-i:hover{color:var(--tx)}
-.bc-i.cur{color:var(--tx);font-weight:700;cursor:default}
-.main-body{flex:1;overflow-y:auto;padding:20px}
-
-/* welcome */
-.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:100%;text-align:center;color:var(--mu)}
-.welcome-ic{font-size:38px;margin-bottom:12px;opacity:.4}
-
-/* ── NODE HEADER ── */
-.nhd{display:flex;align-items:flex-start;justify-content:space-between;
-  margin-bottom:16px;flex-wrap:wrap;gap:10px}
-.nhd-l{display:flex;align-items:center;gap:10px}
-.ntype{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px}
-.nt0{background:rgba(167,139,250,.2);color:#c4b5fd;border:1px solid rgba(167,139,250,.3)}
-.nt1{background:rgba(96,165,250,.18);color:#93c5fd;border:1px solid rgba(96,165,250,.3)}
-.nt2{background:rgba(52,211,153,.15);color:#6ee7b7;border:1px solid rgba(52,211,153,.25)}
-.nt3{background:rgba(251,191,36,.15);color:#fde68a;border:1px solid rgba(251,191,36,.25)}
-.ntit{font-size:16px;font-weight:900}
-.nsub{font-size:11px;color:var(--mu2);margin-top:1px}
-
-/* ── CHILDREN GRID ── */
-.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-bottom:20px}
-.ch-card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;
-  padding:13px 11px;cursor:pointer;transition:all .18s}
-.ch-card:hover{border-color:rgba(79,124,255,.35);background:rgba(79,124,255,.08)}
-.ch-card.add{border-style:dashed;color:var(--mu);justify-content:center;align-items:center;text-align:center;display:flex;flex-direction:column;gap:4px}
-.ch-card.add:hover{color:var(--ac);border-color:var(--ac)}
-.ch-ic{font-size:18px;margin-bottom:5px}
-.ch-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ch-prog{margin-top:5px}
-.ch-prog-t{height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
-.ch-prog-f{height:100%;background:var(--gr);border-radius:2px;transition:width .3s}
-.ch-cnt{font-size:9px;color:var(--mu2);font-family:var(--mono);margin-top:2px}
-
-/* ── RECORDING ITEMS ── */
-.rec-list{display:flex;flex-direction:column;gap:6px}
-.ri{background:var(--sf);border:1px solid var(--bd);border-radius:11px;overflow:hidden;transition:border-color .15s}
-.ri.dn{border-color:rgba(34,197,122,.3);background:rgba(34,197,122,.04)}
-.ri.dn .ri-name{text-decoration:line-through;color:var(--mu)}
-.ri-main{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none}
-.cbx{width:20px;height:20px;border-radius:6px;border:2px solid var(--bd2);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  transition:all .15s;background:var(--s2)}
-.ri.dn .cbx{background:var(--gr);border-color:var(--gr)}
-.ckm{font-size:10px;color:#fff;display:none;font-weight:900}
-.ri.dn .ckm{display:block}
-.ri-body{flex:1;min-width:0}
-.ri-name{font-size:13px;font-weight:700}
-.ri-path{font-size:10px;color:var(--mu2);font-family:var(--mono);margin-top:1px}
-.ri-r{display:flex;align-items:center;gap:5px;flex-shrink:0}
-.mt{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:3px;
-  background:var(--s3);color:var(--mu2);border:1px solid var(--bd)}
-.mt.un{color:#94a3b8}.mt.st{color:var(--yw);background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.2)}
-.stmp{font-size:10px;font-family:var(--mono);color:var(--gr);
-  background:rgba(34,197,122,.1);padding:2px 8px;border-radius:5px;display:none}
-.ri.dn .stmp{display:block}
-.exb{background:none;border:none;cursor:pointer;padding:0 8px 0 0;
-  color:var(--mu);font-size:9px;transition:transform .2s;flex-shrink:0}
-.ri.ex .exb{transform:rotate(180deg)}
-.ri-det{display:none;padding:0 12px 12px;border-top:1px solid var(--bd);background:var(--s2)}
-.ri.ex .ri-det{display:block;padding-top:10px}
-.dg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px}
-.df label{display:block;font-size:10px;color:var(--mu2);font-family:var(--mono);margin-bottom:3px}
-.di{width:100%;padding:6px 10px;background:var(--s3);border:1px solid var(--bd);
-  border-radius:7px;color:var(--tx);font-family:var(--sans);font-size:12px;outline:none}
-.di:focus{border-color:var(--ac)}
-.di::placeholder{color:var(--mu)}
-textarea.di{resize:vertical;min-height:46px}
-.da{display:flex;gap:6px;margin-top:7px}
-.bsv{padding:6px 14px;border-radius:7px;background:var(--ac);border:none;
-  color:#fff;font-size:11px;font-weight:700;font-family:var(--sans);cursor:pointer}
-.bsv:hover{opacity:.88}
-.bcl{padding:6px 10px;border-radius:7px;background:var(--s3);border:1px solid var(--bd);
-  color:var(--mu2);font-size:11px;font-weight:700;font-family:var(--sans);cursor:pointer}
-.bcl:hover{border-color:var(--rd);color:var(--rd)}
-
-/* ── LOG ── */
-.lsec{margin-top:24px}
-.lhd{font-size:11px;font-weight:700;color:var(--mu2);margin-bottom:8px}
-.llist{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto}
-.li{background:var(--sf);border:1px solid var(--bd);border-radius:8px;
-  padding:7px 12px;display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
-.lts{font-size:9px;font-family:var(--mono);color:var(--mu);flex-shrink:0;margin-top:1px}
-.lb{flex:1;font-size:11px;color:var(--mu2)}
-.ln{font-weight:700;color:var(--tx)}
-.ldp{font-size:9px;font-family:var(--mono);color:var(--mu);background:var(--s3);padding:1px 5px;border-radius:3px}
-.le{font-size:12px;color:var(--mu);text-align:center;padding:14px 0}
-
-/* ── MODAL ── */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
-  z-index:300;display:flex;align-items:center;justify-content:center;padding:16px}
-.ov.hid{display:none}
-.mo{background:var(--sf);border:1px solid var(--bd2);border-radius:16px;
-  width:100%;max-width:640px;max-height:88vh;overflow-y:auto;padding:22px}
-.mot{font-size:16px;font-weight:900;margin-bottom:3px}
-.mos{font-size:11px;color:var(--mu2);margin-bottom:14px}
-.atabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap}
-.at{padding:5px 12px;border-radius:7px;border:1px solid var(--bd);
-  background:var(--s2);color:var(--mu2);font-size:11px;font-weight:700;font-family:var(--sans);cursor:pointer}
-.at.on{background:var(--ac);border-color:var(--ac);color:#fff}
-.as{display:none}.as.on{display:block}
-.ml{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.mrow{display:flex;align-items:center;gap:6px;background:var(--s2);
-  border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
-.mi{flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;
-  padding:5px 8px;color:var(--tx);font-family:var(--sans);font-size:12px;outline:none}
-.mi:focus{border-color:var(--ac)}
-.mc{width:28px;height:28px;border-radius:5px;border:1px solid var(--bd);cursor:pointer;padding:0}
-.ar{display:flex;gap:6px;margin-top:4px}
-.ai{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:7px;
-  padding:6px 10px;color:var(--tx);font-family:var(--sans);font-size:12px;outline:none}
-.ai:focus{border-color:var(--ac)}
-
-/* node editor */
-.ne-tree{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
-.ne-node{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
-.ne-hd{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.ne-ic{font-size:12px}
-.ne-ni{flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:5px;
-  padding:4px 8px;color:var(--tx);font-family:var(--sans);font-size:12px;outline:none}
-.ne-ni:focus{border-color:var(--ac)}
-.ne-tag{width:80px;background:var(--s3);border:1px solid var(--bd);border-radius:5px;
-  padding:4px 7px;color:var(--tx);font-family:var(--sans);font-size:11px;outline:none}
-.ne-tag:focus{border-color:var(--ac)}
-.ne-sub{width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:5px;
-  padding:4px 8px;color:var(--tx);font-family:var(--sans);font-size:11px;outline:none;margin-bottom:4px}
-.ne-sub:focus{border-color:var(--ac)}
-.ne-children{padding-left:14px;display:flex;flex-direction:column;gap:3px}
-.mf{display:flex;gap:6px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
-.impa{width:100%;min-height:90px;background:var(--s2);border:1px solid var(--bd);
-  border-radius:7px;padding:8px 12px;color:var(--tx);font-family:var(--mono);
-  font-size:11px;outline:none;resize:vertical;margin-top:6px}
-.impa:focus{border-color:var(--ac)}
-
-/* ── GUIDE PANEL ── */
-.guide-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
-  backdrop-filter:blur(3px);z-index:500;display:none}
-.guide-overlay.open{display:block}
-.guide-panel{position:fixed;top:0;right:0;bottom:0;width:520px;max-width:94vw;
-  background:var(--sf);border-left:1px solid var(--bd2);z-index:501;
-  display:flex;flex-direction:column;transform:translateX(100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1)}
-.guide-panel.open{transform:translateX(0)}
-
-/* panel header */
-.gp-hd{padding:16px 20px;border-bottom:1px solid var(--bd);
-  display:flex;align-items:center;gap:10px;flex-shrink:0}
-.gp-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--ac),#7c3aed);
-  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.gp-title{font-size:14px;font-weight:900;flex:1}
-.gp-sub{font-size:10px;color:var(--mu2);margin-top:1px}
-.gp-close{background:none;border:none;cursor:pointer;color:var(--mu2);
-  font-size:18px;padding:4px;transition:color .15s;flex-shrink:0}
-.gp-close:hover{color:var(--tx)}
-
-/* chapter nav */
-.gp-nav{display:flex;gap:0;border-bottom:1px solid var(--bd);
-  overflow-x:auto;flex-shrink:0;scrollbar-width:none}
-.gp-nav::-webkit-scrollbar{display:none}
-.gp-tab{padding:9px 14px;border:none;background:none;color:var(--mu);
-  font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;
-  border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.gp-tab:hover{color:var(--tx)}
-.gp-tab.on{color:var(--tx);border-bottom-color:var(--ac)}
-
-/* progress */
-.gp-prog{padding:8px 20px;border-bottom:1px solid var(--bd);
-  display:flex;align-items:center;gap:10px;flex-shrink:0}
-.gpp-t{flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
-.gpp-f{height:100%;background:linear-gradient(90deg,var(--ac),var(--gr));border-radius:2px;transition:width .4s}
-.gpp-l{font-size:10px;font-family:var(--mono);color:var(--ac);white-space:nowrap}
-
-/* content */
-.gp-body{flex:1;overflow-y:auto;padding:20px}
-.gp-body::-webkit-scrollbar{width:4px}
-.gp-body::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
-
-/* guide page */
-.gpage{display:none}.gpage.on{display:block}
-
-/* cover */
-.gcover{background:linear-gradient(135deg,#0F1A3E,#1E3A8A);
-  border-radius:14px;padding:28px 24px;margin-bottom:16px;position:relative;overflow:hidden}
-.gcover::before{content:'🤖';position:absolute;right:20px;top:50%;
-  transform:translateY(-50%);font-size:52px;opacity:.15}
-.gcover-tag{font-size:9px;font-family:var(--mono);color:var(--ac);
-  letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
-.gcover-title{font-size:26px;font-weight:900;color:#fff;margin-bottom:6px}
-.gcover-sub{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px}
-.gcover-tags{display:flex;gap:6px;flex-wrap:wrap}
-.gctag{font-size:10px;padding:3px 10px;border-radius:4px;
-  border:1px solid rgba(59,130,246,.4);color:#93c5fd;background:rgba(59,130,246,.1)}
-
-/* section */
-.gsec{margin-bottom:20px}
-.gsec-title{font-size:11px;font-family:var(--mono);color:var(--ac);
-  letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;
-  display:flex;align-items:center;gap:6px}
-.gsec-title::after{content:'';flex:1;height:1px;background:var(--bd)}
-
-/* step cards */
-.gstep{display:flex;gap:10px;align-items:flex-start;background:var(--s2);
-  border:1px solid var(--bd);border-radius:10px;padding:11px 13px;margin-bottom:7px}
-.gstep-n{width:22px;height:22px;border-radius:6px;background:var(--ac);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
-.gstep-b .gstep-t{font-size:12px;font-weight:700;margin-bottom:2px}
-.gstep-b .gstep-d{font-size:11px;color:var(--mu2);line-height:1.5}
-
-/* kpi row */
-.gkpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.gkpi{border-radius:10px;padding:14px 10px;text-align:center}
-.gkpi-n{font-size:26px;font-weight:900;font-family:var(--mono);color:#fff;line-height:1}
-.gkpi-l{font-size:10px;color:rgba(255,255,255,.6);margin-top:4px;line-height:1.3}
-
-/* info box */
-.ginfo{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
-  padding:12px 14px;margin-bottom:10px}
-.ginfo-hd{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;margin-bottom:6px}
-.ginfo-body{font-size:11px;color:var(--mu2);line-height:1.6}
-
-/* warn / tip / ok */
-.gwarn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
-  border-radius:8px;padding:9px 13px;font-size:11px;color:#fbbf24;
-  display:flex;gap:7px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
-.gtip{background:rgba(79,124,255,.08);border:1px solid rgba(79,124,255,.2);
-  border-radius:8px;padding:9px 13px;font-size:11px;color:#93b4ff;
-  display:flex;gap:7px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
-.gok{background:rgba(34,197,122,.08);border:1px solid rgba(34,197,122,.2);
-  border-radius:8px;padding:9px 13px;font-size:11px;color:var(--gr);
-  display:flex;gap:7px;align-items:flex-start;margin-bottom:12px;line-height:1.5}
-
-/* node cards */
-.gnode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.gnode{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:11px 12px}
-.gnode-badge{font-size:9px;font-family:var(--mono);font-weight:700;
-  padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:6px}
-.nb-n{background:rgba(55,65,81,.8);color:#93c5fd}
-.nb-j{background:rgba(6,78,59,.8);color:#6ee7b7}
-.gnode-name{font-size:12px;font-weight:700;margin-bottom:6px}
-.gnode-item{font-size:10px;color:var(--mu2);display:flex;gap:5px;line-height:1.5;margin-bottom:2px}
-.gnode-item::before{content:'•';color:var(--ac);flex-shrink:0}
-
-/* contact cards */
-.gcc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.gcc{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
-  padding:10px 12px}
-.gcc-role{font-size:9px;color:var(--mu2);margin-bottom:2px}
-.gcc-name{font-size:12px;font-weight:700}
-.gcc-desc{font-size:10px;color:var(--mu2);margin-top:2px;line-height:1.4}
-
-/* url list */
-.gurl{display:flex;align-items:center;gap:9px;background:var(--s2);
-  border:1px solid var(--bd);border-radius:9px;padding:9px 12px;margin-bottom:6px}
-.gurl-ic{font-size:14px;flex-shrink:0}
-.gurl-b{flex:1;min-width:0}
-.gurl-name{font-size:11px;font-weight:700}
-.gurl-addr{font-size:10px;font-family:var(--mono);color:var(--ac);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* faq */
-.gfaq{background:var(--s2);border:1px solid var(--bd);border-radius:9px;
-  overflow:hidden;margin-bottom:6px}
-.gfaq-q{background:var(--s3);padding:8px 12px;font-size:11px;font-weight:700}
-.gfaq-a{padding:8px 12px;font-size:11px;color:var(--mu2);line-height:1.5}
-
-/* nav footer */
-.gp-foot{padding:12px 20px;border-top:1px solid var(--bd);
-  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.gp-foot-nav{display:flex;gap:6px}
-.gpbtn{padding:7px 16px;border-radius:8px;font-size:11px;font-weight:700;
-  font-family:var(--sans);cursor:pointer;border:1px solid var(--bd2);
-  background:var(--s2);color:var(--mu2);transition:all .15s}
-.gpbtn:hover{border-color:var(--ac);color:var(--tx)}
-.gpbtn:disabled{opacity:.3;cursor:not-allowed}
-.gpbtn.pr{background:var(--ac);border-color:var(--ac);color:#fff}
-.gpbtn.pr:hover{opacity:.88}
-.gp-pos{font-size:10px;font-family:var(--mono);color:var(--mu2)}
-
-@media(max-width:640px){
-  .guide-panel{width:100vw}
-  .gnode-grid,.gcc-grid,.gkpi-row{grid-template-columns:1fr}
+/* ── TOP NAV ── */
+.nav{
+  height:52px;background:var(--sf);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 20px;gap:0;position:relative;z-index:10;
+  flex-shrink:0;
 }
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(10px);
-  background:var(--sf);border:1px solid var(--bd);padding:7px 14px;border-radius:8px;
-  font-size:11px;opacity:0;transition:all .3s;pointer-events:none;z-index:400;
-  white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.5)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.ok{border-color:rgba(34,197,122,.4);color:var(--gr)}
-.toast.info{border-color:rgba(79,124,255,.4);color:#93b4ff}
-.toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5}
-
-@media(max-width:640px){
-  .layout{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .dg{grid-template-columns:1fr}
+.nav-logo{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:900;color:var(--tx);
+  margin-right:20px;flex-shrink:0;
 }
-@media print{
-  .hd,.sb,.hd-r,.da,.exb,.ri-det,.lsec,.ov,.sidebar,.bc{display:none!important}
-  .layout{grid-template-columns:1fr}
-  .main-body{overflow:visible}
-  .ri{border:1px solid #ddd;background:#fff;border-radius:6px;margin-bottom:4px}
-  .ri.dn{background:#f0fdf4}.stmp{display:block!important}
-  body{background:#fff;color:#111}
+.nav-pip{width:8px;height:8px;border-radius:50%;background:var(--ac);flex-shrink:0}
+
+.tab-list{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.tab-list::-webkit-scrollbar{display:none}
+
+.tab{
+  display:flex;align-items:center;gap:7px;
+  padding:0 18px;height:52px;
+  border:none;background:none;cursor:pointer;
+  color:var(--mu2);font-size:13px;font-weight:700;
+  font-family:var(--sans);white-space:nowrap;
+  border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+  flex-shrink:0;
+}
+.tab:hover{color:var(--tx)}
+.tab.active{color:var(--tx);border-bottom-color:var(--ac)}
+.tab-icon{font-size:16px;line-height:1}
+.tab-badge{
+  font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:700;
+  padding:2px 6px;border-radius:4px;
+  background:var(--s2);color:var(--mu2);
+  border:1px solid var(--bd);
+}
+.tab.active .tab-badge{background:rgba(79,124,255,.2);color:#93b4ff;border-color:rgba(79,124,255,.3)}
+
+/* ── FRAMES ── */
+.frame-wrap{height:calc(100vh - 52px);position:relative}
+.frame{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  border:none;display:none;
+}
+.frame.active{display:block}
+
+/* ── LOADING ── */
+.loading{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);gap:14px;font-size:13px;color:var(--mu2);
+  transition:opacity .3s;
+}
+.loading.hidden{opacity:0;pointer-events:none}
+.spin{
+  width:32px;height:32px;border-radius:50%;
+  border:3px solid var(--bd);border-top-color:var(--ac);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* mobile */
+@media(max-width:600px){
+  .nav-logo span{display:none}
+  .tab{padding:0 12px;font-size:11px;gap:5px}
+  .tab-badge{display:none}
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="hd">
-  <div class="hd-logo"><div class="pip"></div>AIテレサポ 録音チェックリスト</div>
-  <select class="hd-dept" id="deptSel" onchange="onDept()">
-    <option value="">-- 部署を選択 --</option>
-  </select>
-  <div class="hd-r">
-    <button class="btn" style="background:rgba(79,124,255,.15);border-color:rgba(79,124,255,.3);color:#93b4ff;font-size:12px" onclick="openGuide()">📖 ガイド</button>
-    <button class="btn pu" onclick="openAdmin()">⚙️ 管理</button>
-    <button class="btn" onclick="openImport()">📥 入力</button>
-    <button class="btn" onclick="exportData()">📤 出力</button>
-    <button class="btn ac" onclick="window.print()">🖨️ PDF</button>
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-pip"></div>
+    <span>AIテレサポ</span>
   </div>
-</header>
 
-<!-- SYNC BAR -->
-<div class="sb">
-  <div class="sd" id="sdot"></div>
-  <span class="st" id="stxt">初期化中...</span>
-  <span class="sm" id="stime"></span>
+  <div class="tab-list">
+    <button class="tab active" onclick="switchTab('recorder',this)">
+      <span class="tab-icon">🎙️</span>
+      録音アプリ
+      <span class="tab-badge">RECORDER</span>
+    </button>
+    <button class="tab" onclick="switchTab('checklist',this)">
+      <span class="tab-icon">✅</span>
+      録音チェックリスト
+      <span class="tab-badge">CHECKLIST</span>
+    </button>
+    <button class="tab" onclick="switchTab('playbook',this)">
+      <span class="tab-icon">📖</span>
+      プレイブック
+      <span class="tab-badge">PLAYBOOK</span>
+    </button>
+  </div>
+</nav>
+
+<div class="frame-wrap">
+  <!-- 録音アプリ -->
+  <div class="loading" id="load-recorder">
+    <div class="spin"></div>
+    <div>録音アプリを読み込み中...</div>
+  </div>
+  <iframe class="frame active" id="frame-recorder"
+    src="recorder.html"
+    onload="onLoad('recorder')"></iframe>
+
+  <!-- チェックリスト -->
+  <div class="loading hidden" id="load-checklist">
+    <div class="spin"></div>
+    <div>チェックリストを読み込み中...</div>
+  </div>
+  <iframe class="frame" id="frame-checklist"
+    src="checklist.html"
+    onload="onLoad('checklist')"></iframe>
+
+  <!-- プレイブック -->
+  <div class="loading hidden" id="load-playbook">
+    <div class="spin"></div>
+    <div>プレイブックを読み込み中...</div>
+  </div>
+  <iframe class="frame" id="frame-playbook"
+    src="playbook.html"
+    onload="onLoad('playbook')"></iframe>
 </div>
-
-<!-- LAYOUT -->
-<div class="layout">
-
-  <!-- SIDEBAR: ツリーナビ -->
-  <aside class="sidebar">
-    <div class="sb-head">
-      <div class="sb-stats">
-        <div class="sstat"><div class="sstat-n sn-gr" id="sDn">—</div><div class="sstat-l">完了</div></div>
-        <div class="sstat"><div class="sstat-n sn-ac" id="sTt">—</div><div class="sstat-l">全件</div></div>
-        <div class="sstat"><div class="sstat-n sn-or" id="sRm">—</div><div class="sstat-l">残件</div></div>
-      </div>
-      <div class="prog-t"><div class="prog-f" id="pf" style="width:0%"></div></div>
-      <div class="prog-l" id="pp">—</div>
-    </div>
-    <div class="tree-wrap" id="treeWrap"></div>
-    <div class="sb-foot">
-      <button class="btn-nw" onclick="openModal('ws')">＋ ワークスペースを追加</button>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <div class="main">
-    <div class="bc" id="breadcrumb">
-      <span class="bc-i cur">ホーム</span>
-    </div>
-    <div class="main-body" id="mainBody">
-      <div class="welcome">
-        <div class="welcome-ic">🗂️</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:6px">部署・ワークスペースを選択してください</div>
-        <div style="font-size:12px;color:var(--mu2)">左サイドバーのツリーから選択すると<br>録音対象ファイル一覧が表示されます</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN MODAL -->
-<div class="ov hid" id="adminModal">
-  <div class="mo">
-    <div class="mot">⚙️ 管理者設定</div>
-    <div class="mos">部署・ノードツリーのカスタマイズ。変更はクラウド共有されます。</div>
-    <div class="atabs">
-      <button class="at on" onclick="swAT('dept',this)">🏢 部署管理</button>
-      <button class="at" onclick="swAT('node',this)">🌲 ノード編集</button>
-    </div>
-    <div class="as on" id="as-dept">
-      <div class="ml" id="adList"></div>
-      <div class="ar">
-        <input class="ai" id="ndn" placeholder="新しい部署名（例: 営業部 Bチーム）">
-        <button class="btn ac" onclick="addDept()">＋ 追加</button>
-      </div>
-    </div>
-    <div class="as" id="as-node">
-      <select class="hd-dept" id="ndeptSel" onchange="renderNodeAdmin()" style="margin-bottom:10px;width:100%"></select>
-      <div class="ne-tree" id="neTree"></div>
-    </div>
-    <div class="mf">
-      <button class="btn rd" onclick="resetDept()">チェック記録をリセット</button>
-      <button class="btn" onclick="closeAdmin()">キャンセル</button>
-      <button class="btn ac" onclick="saveAdmin()">💾 保存して閉じる</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL (ws/node add) -->
-<div class="ov hid" id="addModal">
-  <div class="mo" style="max-width:420px">
-    <div class="mot" id="addMot">追加</div>
-    <div class="mos" id="addMos">名前を入力してください</div>
-    <input class="ai" id="addInp" placeholder="名前" style="width:100%;margin-bottom:8px">
-    <input class="ai" id="addSub" placeholder="説明（任意）" style="width:100%;margin-bottom:8px">
-    <input class="ai" id="addTag" placeholder="タグ: unused / stopped（任意）" style="width:100%">
-    <div class="mf">
-      <button class="btn" onclick="closeAddModal()">キャンセル</button>
-      <button class="btn ac" onclick="confirmAdd()">作成</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     GUIDE PANEL
-══════════════════════════════════════════ -->
-<div class="guide-overlay" id="guideOverlay" onclick="closeGuide()"></div>
-<div class="guide-panel" id="guidePanel">
-
-  <!-- header -->
-  <div class="gp-hd">
-    <div class="gp-logo">📖</div>
-    <div style="flex:1">
-      <div class="gp-title">AIテレサポ オンボーディングガイド</div>
-      <div class="gp-sub">セットアップ手順 · 録音方法 · このアプリの使い方</div>
-    </div>
-    <button class="gp-close" onclick="closeGuide()">✕</button>
-  </div>
-
-  <!-- chapter tabs -->
-  <nav class="gp-nav" id="gpNav"></nav>
-
-  <!-- progress -->
-  <div class="gp-prog">
-    <div class="gpp-t"><div class="gpp-f" id="gppf" style="width:0%"></div></div>
-    <span class="gpp-l" id="gppl">0 / 0 ページ閲覧済み</span>
-  </div>
-
-  <!-- body -->
-  <div class="gp-body" id="gpBody">
-
-    <!-- ── GP0: 表紙 ── -->
-    <div class="gpage" id="gp0">
-      <div class="gcover">
-        <div class="gcover-tag">AIテレサポ v1.0 | SoloptiLink × アプクロ</div>
-        <div class="gcover-title">オペレーション<br>プレイブック</div>
-        <div class="gcover-sub">このガイドを読めばセットアップから録音・発信・改善まで自己完結できます</div>
-        <div class="gcover-tags">
-          <span class="gctag">📋 このアプリの使い方</span>
-          <span class="gctag">🚀 セットアップ手順</span>
-          <span class="gctag">🎙️ 録音ガイド</span>
-          <span class="gctag">📞 発信・改善</span>
-        </div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">📚 このガイドの構成</div>
-        <div class="gstep"><div class="gstep-n">1</div><div class="gstep-b"><div class="gstep-t">このアプリの使い方</div><div class="gstep-d">チェックリストの操作方法・部署管理・クラウド同期の説明</div></div></div>
-        <div class="gstep"><div class="gstep-n">2</div><div class="gstep-b"><div class="gstep-t">AIテレサポとは</div><div class="gstep-d">サービス概要・KPI・4ステップバリューチェーン</div></div></div>
-        <div class="gstep"><div class="gstep-n">3</div><div class="gstep-b"><div class="gstep-t">ログイン情報 & 担当者連絡先</div><div class="gstep-d">各画面のID/PW・ChatWork連絡先</div></div></div>
-        <div class="gstep"><div class="gstep-n">4</div><div class="gstep-b"><div class="gstep-t">オンボーディング手順</div><div class="gstep-d">Kickoffまでの4ステップ</div></div></div>
-        <div class="gstep"><div class="gstep-n">5</div><div class="gstep-b"><div class="gstep-t">スクリプト設計</div><div class="gstep-d">ノード構造・キーワード・優先順位設定</div></div></div>
-        <div class="gstep"><div class="gstep-n">6</div><div class="gstep-b"><div class="gstep-t">録音 & 発信準備</div><div class="gstep-d">録音ツールの使い方・チャンネル設定・タスク作成</div></div></div>
-        <div class="gstep"><div class="gstep-n">7</div><div class="gstep-b"><div class="gstep-t">オペレーター対応 & PDCA改善</div><div class="gstep-d">代電フロー・ログ分析・スクリプト改善サイクル</div></div></div>
-      </div>
-    </div>
-
-    <!-- ── GP1: このアプリの使い方 ── -->
-    <div class="gpage" id="gp1">
-      <div class="gsec">
-        <div class="gsec-title">📋 このアプリの使い方</div>
-        <div class="gtip">💡 このチェックリストは録音作業の進捗を管理するツールです。チェックを入れながら作業を進めてください。</div>
-        <div class="gstep"><div class="gstep-n">1</div><div class="gstep-b"><div class="gstep-t">部署を選択する</div><div class="gstep-d">画面上部のセレクトボックスで自分の部署を選びます。部署ごとにチェックリストの内容が変わります。</div></div></div>
-        <div class="gstep"><div class="gstep-n">2</div><div class="gstep-b"><div class="gstep-t">左ツリーからノードを選択する</div><div class="gstep-d">📦ワークスペース → 📁トーク → 🎙️バリエーション の順にクリックして作業対象を選択します。</div></div></div>
-        <div class="gstep"><div class="gstep-n">3</div><div class="gstep-b"><div class="gstep-t">録音ファイルをチェックする</div><div class="gstep-d">録音が完了したファイルの行をクリックして ✓ を入れます。担当者名・メモも記録できます（▼ をクリックで展開）。</div></div></div>
-        <div class="gstep"><div class="gstep-n">4</div><div class="gstep-b"><div class="gstep-t">進捗を共有する</div><div class="gstep-d">チェック状態はクラウド同期され、同じURLを開いている全員がリアルタイムで進捗を確認できます。</div></div></div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">⚙️ 管理者向け操作</div>
-        <div class="ginfo"><div class="ginfo-hd">🏢 部署の追加・編集</div><div class="ginfo-body">右上「⚙️ 管理」→「部署管理」タブから部署を追加・削除できます。部署ごとに異なるチェックリストを管理できます。</div></div>
-        <div class="ginfo"><div class="ginfo-hd">🌲 ノードツリーのカスタマイズ</div><div class="ginfo-body">「⚙️ 管理」→「ノード編集」タブから、ワークスペース・トーク・バリエーション・切り返しを自由に追加・編集・削除できます。</div></div>
-        <div class="ginfo"><div class="ginfo-hd">📤 データの引き継ぎ</div><div class="ginfo-body">「出力」ボタンでJSONをエクスポートし、「入力」ボタンで別の環境にインポートできます。過去の作業履歴も含めて移行できます。</div></div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">🔗 関連ツール</div>
-        <div class="gurl"><div class="gurl-ic">🎙️</div><div class="gurl-b"><div class="gurl-name">AIテレサポ専用録音アプリ</div><div class="gurl-addr"><a href="https://apclo-dev.github.io/aitelesa-recorder/" target="_blank" style="color:var(--ac)">https://apclo-dev.github.io/aitelesa-recorder/</a></div></div></div>
-        <div class="gurl"><div class="gurl-ic">⚙️</div><div class="gurl-b"><div class="gurl-name">管理画面（スクリプト編集）</div><div class="gurl-addr"><a href="https://robot.topsaler.cc/user/login" target="_blank" style="color:var(--ac)">https://robot.topsaler.cc/user/login</a></div></div></div>
-        <div class="gurl"><div class="gurl-ic">📞</div><div class="gurl-b"><div class="gurl-name">オペレーター待機画面</div><div class="gurl-addr"><a href="https://co.topsaler.cc/user/login/" target="_blank" style="color:var(--ac)">https://co.topsaler.cc/user/login/</a></div></div></div>
-      </div>
-    </div>
-
-    <!-- ── GP2: AIテレサポとは ── -->
-    <div class="gpage" id="gp2">
-      <div class="gsec">
-        <div class="gsec-title">📡 AIテレサポとは</div>
-        <div class="gtip">💡 AIで架電量を数倍にしながら、受付突破後は人間が対応することでアポ品質を維持する</div>
-        <div class="gkpi-row">
-          <div class="gkpi" style="background:linear-gradient(135deg,#2563EB,#1E40AF)"><div class="gkpi-n">10×</div><div class="gkpi-l">生産性向上<br>（従来比）</div></div>
-          <div class="gkpi" style="background:linear-gradient(135deg,#1E3A8A,#1e2a5a)"><div class="gkpi-n">24h</div><div class="gkpi-l">365日<br>稼働</div></div>
-          <div class="gkpi" style="background:linear-gradient(135deg,#059669,#065F46)"><div class="gkpi-n">¥2,400</div><div class="gkpi-l">アポ1件あたり<br>（1%アポ率時）</div></div>
-        </div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">🔄 4ステップバリューチェーン</div>
-        <div class="gstep"><div class="gstep-n" style="background:#2563EB">1</div><div class="gstep-b"><div class="gstep-t">AI初動架電</div><div class="gstep-d">大量リストへ自動架電・反応収集。24h/365日稼働で営業機会を最大化</div></div></div>
-        <div class="gstep"><div class="gstep-n" style="background:#1E3A8A">2</div><div class="gstep-b"><div class="gstep-t">自動スクリーニング</div><div class="gstep-d">見込み度をA/B/Cに自動分類。80%の無効顧客をフィルタリング</div></div></div>
-        <div class="gstep"><div class="gstep-n" style="background:#059669">3</div><div class="gstep-b"><div class="gstep-t">人間クロージング</div><div class="gstep-d">Aランクのみ担当者が対応。クロージングに集中できる環境を実現</div></div></div>
-        <div class="gstep"><div class="gstep-n" style="background:#0891B2">4</div><div class="gstep-b"><div class="gstep-t">データPDCA</div><div class="gstep-d">全会話データを分析しスクリプト継続改善。アポ率を週次で向上</div></div></div>
-      </div>
-    </div>
-
-    <!-- ── GP3: ログイン & 連絡先 ── -->
-    <div class="gpage" id="gp3">
-      <div class="gsec">
-        <div class="gsec-title">🔐 ログイン情報（社外秘）</div>
-        <div class="gwarn">⚠️ この情報は社外秘です。スクリーンショット・転送・第三者共有は厳禁</div>
-        <div class="ginfo"><div class="ginfo-hd">⚙️ 管理画面（Admin）</div><div class="ginfo-body">URL: <a href="https://robot.topsaler.cc/user/login" target="_blank" style="color:var(--ac)">robot.topsaler.cc/user/login</a><br>ID: Apukuro　　PW: Apukuro<br><span style="font-size:10px;color:var(--mu)">※ 架電設定・スクリプト管理・データ分析が可能</span></div></div>
-        <div class="ginfo"><div class="ginfo-hd">📞 オペレーター画面</div><div class="ginfo-body">URL: <a href="https://co.topsaler.cc/user/login/" target="_blank" style="color:var(--ac)">co.topsaler.cc/user/login</a><br>ID①: Apukuro-01　PW①: Apukuro@0123<br>ID②: Apukuro-02　PW②: Apukuro@0123</div></div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">👥 担当者連絡先（ChatWork）</div>
-        <div class="gcc-grid">
-          <div class="gcc"><div class="gcc-role">代用担当者</div><div class="gcc-name">李 継超 様</div><div class="gcc-desc">日常的な運用・設定変更</div></div>
-          <div class="gcc"><div class="gcc-role">経理関連</div><div class="gcc-name">渡部 結菜 様</div><div class="gcc-desc">請求書・支払い・経理処理</div></div>
-          <div class="gcc"><div class="gcc-role">紹介元企業</div><div class="gcc-name">小貫 太秀 様</div><div class="gcc-desc">契約・サービス橋渡し担当</div></div>
-          <div class="gcc"><div class="gcc-role">CS担当</div><div class="gcc-name">山田 晃路 様<br>青木 慎悟 様</div><div class="gcc-desc">オンボーディング支援</div></div>
-        </div>
-        <div class="gurl"><div class="gurl-ic">💬</div><div class="gurl-b"><div class="gurl-name">ChatWork:（株）アプクロ × AIテレサポご案内</div><div class="gurl-addr"><a href="https://www.chatwork.com/#!rid418995000" target="_blank" style="color:var(--ac)">https://www.chatwork.com/#!rid418995000</a></div></div></div>
-      </div>
-    </div>
-
-    <!-- ── GP4: オンボーディング ── -->
-    <div class="gpage" id="gp4">
-      <div class="gsec">
-        <div class="gsec-title">🚀 オンボーディング — スタートまでの4ステップ</div>
-        <div class="gstep"><div class="gstep-n">01</div><div class="gstep-b"><div class="gstep-t">事前ガイドを確認する</div><div class="gstep-d">初回オンボーディング事前ガイドURLを開いて一読する<br><a href="https://docs.google.com/document/d/1TeP-CyDEzCwzU4edbAS8TPsujB0n5_sKNeADdbzuh2A/" target="_blank" style="color:var(--ac);font-size:10px">→ ガイドURLを開く</a></div></div></div>
-        <div class="gstep"><div class="gstep-n">02</div><div class="gstep-b"><div class="gstep-t">アンケートに回答する</div><div class="gstep-d">ベースAIスクリプト作成のためのアンケートに回答。自社商材・ターゲット情報を正確に記入する。</div></div></div>
-        <div class="gstep"><div class="gstep-n">03</div><div class="gstep-b"><div class="gstep-t">チュートリアル講座を受講する</div><div class="gstep-d">管理画面の使い方・架電設定・オペレーター画面の操作を学習する。</div></div></div>
-        <div class="gstep"><div class="gstep-n">04</div><div class="gstep-b"><div class="gstep-t">Kickoff ミーティング</div><div class="gstep-d">SoloptiLink担当者とKickoff（Week 1）。KPI設定・ターゲット・スクリプト最終確認。<br><span style="font-size:10px;color:var(--mu2)">ChatWorkまたは担当者から日程調整連絡</span></div></div></div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">📅 3ヶ月ロードマップ</div>
-        <div class="ginfo"><div class="ginfo-hd" style="color:#93c5fd">Week 1 — 導入フェーズ</div><div class="ginfo-body">ヒアリング・ターゲット設定 / 初期スクリプト作成 / KPI・成果目標の設定 / 管理画面セットアップ</div></div>
-        <div class="ginfo"><div class="ginfo-hd" style="color:#93c5fd">Week 2-4 — テスト・最適化</div><div class="ginfo-body">少量テスト架電（〜500件）/ 顧客反応データ分析 / スクリプト改善・音声調整 / 本格稼働向けA/Bテスト</div></div>
-        <div class="ginfo"><div class="ginfo-hd" style="color:#6ee7b7">Month 2-3 — 本格稼働・成果創出</div><div class="ginfo-body">大量架電開始（月1〜3万件）/ AIスクリーニング→人間クロージング / 週次KPIレポート確認・改善 / ROI確認・アポ単価算出</div></div>
-      </div>
-    </div>
-
-    <!-- ── GP5: スクリプト設計 ── -->
-    <div class="gpage" id="gp5">
-      <div class="gsec">
-        <div class="gsec-title">🧩 4つの基本ノード</div>
-        <div class="gnode-grid">
-          <div class="gnode"><span class="gnode-badge nb-n">通常ノード</span><div class="gnode-name">💬 もしもし</div><div class="gnode-item">音声: （3秒空白音）もしもし</div><div class="gnode-item">中断許可: ON</div><div class="gnode-item">用途: AI第一声 / 留守電スキップ</div></div>
-          <div class="gnode"><span class="gnode-badge nb-n">通常ノード</span><div class="gnode-name">📋 自己紹介</div><div class="gnode-item">音声: 社名・担当者確認の一文</div><div class="gnode-item">中断許可: <span style="color:#f87171">OFF ← 必須</span></div><div class="gnode-item">用途: 用件を最後まで伝えきる</div></div>
-          <div class="gnode"><span class="gnode-badge nb-j">ジャンプノード</span><div class="gnode-name">🔀 オペレーターに転送</div><div class="gnode-item">次のステップ: 転送</div><div class="gnode-item">末尾: <span style="color:#fbbf24">1分の空白音（必須）</span></div><div class="gnode-item">転送設定: ON</div></div>
-          <div class="gnode"><span class="gnode-badge nb-j">ジャンプノード</span><div class="gnode-name">🔴 お断り</div><div class="gnode-item">次のステップ: 切断</div><div class="gnode-item">中断許可: OFF</div><div class="gnode-item">音声: かしこまりました。失礼いたします</div></div>
-        </div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">🎯 キーワード優先順位</div>
-        <div class="ginfo"><div class="ginfo-hd" style="color:#6ee7b7">✅ 私が担当者</div><div class="ginfo-body">私です / 私が担当者 / 僕が担当者 / 担当者は私 / オーナーです / 私がオーナー / オーナーになります</div></div>
-        <div class="ginfo"><div class="ginfo-hd" style="color:#f87171">🚫 興味なし</div><div class="ginfo-body">お断り / 興味な / 興味無 / 興味ありません / 結構です</div></div>
-        <div class="gwarn">⚠️ 「興味なし」を「私が担当者」より上位に設定する。複合発言（担当+拒否）への対策として必須。左上にあるほど優先度が高い。</div>
-      </div>
-    </div>
-
-    <!-- ── GP6: 録音 & 発信 ── -->
-    <div class="gpage" id="gp6">
-      <div class="gsec">
-        <div class="gsec-title">🎙️ 録音ルール</div>
-        <div class="gstep"><div class="gstep-n">①</div><div class="gstep-b"><div class="gstep-t">ファイル形式: WAV推奨</div><div class="gstep-d">44100Hz / モノラル。MP3も可（128kbps）</div></div></div>
-        <div class="gstep"><div class="gstep-n">②</div><div class="gstep-b"><div class="gstep-t">無音トリム</div><div class="gstep-d">先頭・末尾は0.1秒残す。アプリで自動カット可能。0.4秒以上残ると認識エラーに。</div></div></div>
-        <div class="gstep"><div class="gstep-n">③</div><div class="gstep-b"><div class="gstep-t">転送ノードのみ: 末尾に1分の空白音</div><div class="gstep-d">オペレーターが代電するまでの待機時間として必須。録音アプリの「保留音を末尾に結合」トグルをONにして設定。</div></div></div>
-        <div class="gstep"><div class="gstep-n">④</div><div class="gstep-b"><div class="gstep-t">管理画面にアップロード</div><div class="gstep-d">録音アプリで録音→DL → 管理画面のノード編集からWAVをアップロード</div></div></div>
-        <div class="gurl" style="margin-top:10px"><div class="gurl-ic">🎙️</div><div class="gurl-b"><div class="gurl-name">専用録音アプリ（ブラウザで動作）</div><div class="gurl-addr"><a href="https://apclo-dev.github.io/aitelesa-recorder/" target="_blank" style="color:var(--ac)">https://apclo-dev.github.io/aitelesa-recorder/</a></div></div></div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">📊 チャンネル設定 & 発信手順</div>
-        <div class="gstep"><div class="gstep-n">①</div><div class="gstep-b"><div class="gstep-t">管理者の同時数を 0 にする</div><div class="gstep-d">全チャンネルをオペレーターに振り分けるために必須</div></div></div>
-        <div class="gstep"><div class="gstep-n">②</div><div class="gstep-b"><div class="gstep-t">オペレーターに 3以上 を設定</div><div class="gstep-d">ユーザー編集 → 同時数 3〜8（推奨）。0のままだと発信不可</div></div></div>
-        <div class="gstep"><div class="gstep-n">③</div><div class="gstep-b"><div class="gstep-t">発信時間帯: 0:00〜23:59</div><div class="gstep-d">開始・停止は手動。時間制限は設けない推奨</div></div></div>
-        <div class="gstep"><div class="gstep-n">④</div><div class="gstep-b"><div class="gstep-t">タスク作成 → リストアップロード</div><div class="gstep-d">スクリプト・回線・所有者を設定。電話番号はハイフンなし文字列形式でA列に記入</div></div></div>
-        <div class="gwarn">⚠️ 管理者のチャンネルが残ったままだとオペレーターに発信が届かない。最頻出エラー。</div>
-      </div>
-    </div>
-
-    <!-- ── GP7: オペ対応 & PDCA ── -->
-    <div class="gpage" id="gp7">
-      <div class="gsec">
-        <div class="gsec-title">📞 オペレーター対応フロー</div>
-        <div class="gstep"><div class="gstep-n">1</div><div class="gstep-b"><div class="gstep-t">初期設定（初回のみ）</div><div class="gstep-d">「転送後タスク一時停止」をONに設定。Chrome拡張機能で転送通知を受け取る。</div></div></div>
-        <div class="gstep"><div class="gstep-n">2</div><div class="gstep-b"><div class="gstep-t">転送通知を受け取る</div><div class="gstep-d">オペレーター画面に通知が届いたらリアルタイムリスニングを開始する</div></div></div>
-        <div class="gstep"><div class="gstep-n">3</div><div class="gstep-b"><div class="gstep-t">リスニング → 最適タイミングで代電</div><div class="gstep-d">AIと相手の会話を傍聴して流れを把握。「電話を代わる」ボタンでバトンタッチ。</div></div></div>
-        <div class="gstep"><div class="gstep-n">4</div><div class="gstep-b"><div class="gstep-t">見込み度を設定して提出</div><div class="gstep-d">通話終了後にA/B/C/Dで見込み度を入力して提出する</div></div></div>
-      </div>
-      <div class="gsec">
-        <div class="gsec-title">🔄 PDCA改善サイクル</div>
-        <div class="gstep"><div class="gstep-n" style="background:#1E3A8A">P</div><div class="gstep-b"><div class="gstep-t">PLAN: キーワード・スクリプト設計</div><div class="gstep-d">担当者確認キーワードと興味なしキーワードの優先順位を設計する</div></div></div>
-        <div class="gstep"><div class="gstep-n" style="background:#059669">D</div><div class="gstep-b"><div class="gstep-t">DO: 発信実行・通話録音</div><div class="gstep-d">タスクを起動して発信。通話内容は全て自動で録音・文字起こしされる</div></div></div>
-        <div class="gstep"><div class="gstep-n" style="background:#D97706">C</div><div class="gstep-b"><div class="gstep-t">CHECK: 通話ログ分析</div><div class="gstep-d">発信タスク → 通話詳細 → 通話記録で解析不能になった発言パターンを特定</div></div></div>
-        <div class="gstep"><div class="gstep-n" style="background:#DC2626">A</div><div class="gstep-b"><div class="gstep-t">ACT: キーワード追加・優先順位調整</div><div class="gstep-d">未登録表現を追加・優先順位を修正。編集後は「保存」と「公開」の両方を押す。</div></div></div>
-        <div class="gok">✅ 毎週ログを確認してキーワードを更新する習慣が受付突破率改善の鍵</div>
-      </div>
-    </div>
-
-  </div><!-- /gp-body -->
-
-  <!-- footer nav -->
-  <div class="gp-foot">
-    <button class="gpbtn" id="gpPrev" onclick="guideNav(-1)" disabled>← 前へ</button>
-    <span class="gp-pos" id="gpPos">1 / 8</span>
-    <div class="gp-foot-nav">
-      <button class="gpbtn pr" id="gpNext" onclick="guideNav(1)">次へ →</button>
-    </div>
-  </div>
-</div><!-- /guide-panel -->
-
-<!-- IMPORT MODAL -->
-<div class="ov hid" id="importModal">
-  <div class="mo" style="max-width:460px">
-    <div class="mot">📥 データインポート</div>
-    <div class="mos">エクスポートしたJSONを貼り付けてください。既存データに上書きされます。</div>
-    <textarea class="impa" id="impArea" placeholder='{"version":3,...} を貼り付け'></textarea>
-    <div class="mf">
-      <button class="btn" onclick="closeImport()">キャンセル</button>
-      <button class="btn ac" onclick="doImport()">インポート実行</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════════════════
-//  STORAGE
-// ════════════════════════════════════════════════════════
-const CLOUD=typeof window.storage!=='undefined';
-async function cg(k){
-  if(CLOUD){try{const r=await window.storage.get(k,true);return r?JSON.parse(r.value):null}catch{return null}}
-  try{return JSON.parse(localStorage.getItem(k))}catch{return null}
-}
-async function cs(k,v){
-  const s=JSON.stringify(v);
-  if(CLOUD){try{await window.storage.set(k,s,true)}catch(e){console.warn(e)}}
-  localStorage.setItem(k,s);
-}
+let cur = 'recorder';
 
-// ════════════════════════════════════════════════════════
-//  DATA MODEL
-//  depts: [{id, name, color}]
-//  nodes: { deptId: [node] }
-//    node: { id, type:'ws'|'talk'|'var'|'rebuttal', name, sub, tags:[], children:[node] }
-//  checks: { nodeId: {done, doneAt, person, memo} }
-//  logs:   [{ts, action, name, dept, deptName, person}]
-// ════════════════════════════════════════════════════════
+function switchTab(id, btn) {
+  // hide current
+  document.getElementById('frame-' + cur)?.classList.remove('active');
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
 
-const ICONS={ws:'📦',talk:'📁',var:'🎙️',rebuttal:'🎙️'};
-const LABELS={ws:'ワークスペース',talk:'トーク',var:'バリエーション',rebuttal:'切り返し'};
-const CHILD_TYPE={ws:'talk',talk:'var',var:'rebuttal',rebuttal:'rebuttal'};
-const DEPTH_CLASS={ws:'d0',talk:'d1',var:'d2',rebuttal:'d3'};
-const TYPE_CLASS={ws:'nt0',talk:'nt1',var:'nt2',rebuttal:'nt3'};
+  cur = id;
 
-// ── デフォルトデータ（アプクロ用） ──
-const DD=[{id:'d0',name:'アプクロ（AIテレサポ担当）',color:'#4f7cff'}];
-const DN={
-  d0:[
-    {id:'ws1',type:'ws',name:'AIテレサポ',sub:'',tags:[],children:[
-      {id:'ws1_t1',type:'talk',name:'作業01 保留音',sub:'',tags:[],children:[
-        {id:'ws1_t1_v1',type:'var',name:'説明3 — 保留音60秒結合',
-         sub:'録音アプリ: 保留音トグルON → 落ち着いたBGM → 60秒 → DL → アップロード',
-         tags:[],children:[]}
-      ]},
-      {id:'ws1_t2',type:'talk',name:'作業02 よくある質問',sub:'',tags:[],children:[
-        {id:'ws1_t2_v1',type:'var',name:'よくある質問 全回答',
-         sub:'確認URL: https://bot-designer.topsaler.cc/82666/knowledge',
-         tags:[],children:[]}
-      ]},
-      {id:'ws1_t3',type:'talk',name:'作業03 通常ノード',sub:'オープニング以外の全通常ノード',tags:[],children:[
-        {id:'ws1_t3_v01',type:'var',name:'転送',sub:'担当者確認後オペレーターへ転送するトーク',tags:[],children:[]},
-        {id:'ws1_t3_v02',type:'var',name:'代電失敗',sub:'転送に失敗したときの対応',tags:[],children:[]},
-        {id:'ws1_t3_v03',type:'var',name:'録音',sub:'留守番電話へのメッセージ録音依頼',tags:[],children:[]},
-        {id:'ws1_t3_v04',type:'var',name:'終話',sub:'通話を終了する際の挨拶',tags:[],children:[]},
-        {id:'ws1_t3_v05',type:'var',name:'待機',sub:'お客様に少しお待ちいただく際のトーク',tags:[],children:[]},
-        {id:'ws1_t3_v06',type:'var',name:'（未使用）電話番号の復唱-相手',sub:'相手の電話番号を復唱するトーク',tags:['unused'],children:[]},
-        {id:'ws1_t3_v07',type:'var',name:'（未使用）電話番号-再度',sub:'電話番号を再度確認するトーク',tags:['unused'],children:[]},
-        {id:'ws1_t3_v08',type:'var',name:'お取り込み中',sub:'忙しい際・折り返し希望の対応',tags:[],children:[]},
-        {id:'ws1_t3_v09',type:'var',name:'サービス',sub:'サービス内容を説明するトーク',tags:[],children:[]},
-        {id:'ws1_t3_v10',type:'var',name:'お断り-切断',sub:'興味なし・お断りされた際の終了トーク',tags:[],children:[]},
-        {id:'ws1_t3_v11',type:'var',name:'追客',sub:'フォローアップ・追客対応トーク',tags:[],children:[]},
-        {id:'ws1_t3_v12',type:'var',name:'値段',sub:'料金・費用について説明するトーク',tags:[],children:[]},
-        {id:'ws1_t3_v13',type:'var',name:'日程',sub:'日程・スケジュールを確認するトーク',tags:[],children:[]},
-        {id:'ws1_t3_v14',type:'var',name:'（停止）追客-対象外',sub:'追客対象外と判断した際のトーク（停止中）',tags:['stopped'],children:[]},
-        {id:'ws1_t3_v15',type:'var',name:'追客-STEP1別サービス利用中',sub:'他サービス利用中の場合の追客トーク',tags:[],children:[]},
-        {id:'ws1_t3_v16',type:'var',name:'完全に対象外',sub:'完全に対象外と判断した際の終了トーク',tags:[],children:[]},
-        {id:'ws1_t3_v17',type:'var',name:'追客-対象内',sub:'追客対象と判断した場合のフォロートーク',tags:[],children:[]},
-        {id:'ws1_t3_v18',type:'var',name:'追客-STEP2別サービス導入前',sub:'別サービス導入前の顧客への追客トーク',tags:[],children:[]},
-        {id:'ws1_t3_v19',type:'var',name:'間違い電話',sub:'間違い電話だった際の対応トーク',tags:[],children:[]},
-        {id:'ws1_t3_v20',type:'var',name:'話を聞いて',sub:'お客様が話を聞いてほしい際の対応',tags:[],children:[]},
-        {id:'ws1_t3_v21',type:'var',name:'切断-会話不成立',sub:'会話が成立しなかった際の終了トーク',tags:[],children:[]},
-      ]},
-    ]},
-  ]
-};
+  // show new
+  document.getElementById('frame-' + id)?.classList.add('active');
+  btn.classList.add('active');
 
-// ════════════════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════════════════
-let depts=[],nodes={},checks={},logs=[];
-let curDept=null,selNodeId=null;
-const expanded={};
-
-// ════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════
-async function init(){
-  setSS('sy','同期中...');
-  try{
-    const [d,n,c,l]=await Promise.all([cg('rc3_d'),cg('rc3_n'),cg('rc3_c'),cg('rc3_l')]);
-    depts=d||DD; nodes=n||DN; checks=c||{}; logs=l||[];
-    setSS('ok',CLOUD?'クラウド同期: 接続済み（複数人でリアルタイム共有）':'ローカル保存モード');
-  }catch{
-    depts=DD;nodes=DN;checks={};logs=[];
-    setSS('er','同期エラー — ローカルモード');
-  }
-  buildDS();
-  const last=localStorage.getItem('rc3_ld');
-  if(last&&depts.find(d=>d.id===last)){
-    document.getElementById('deptSel').value=last;
-    curDept=last; renderSidebar();
+  // show loading if not yet loaded
+  const load = document.getElementById('load-' + id);
+  if (load && !load.classList.contains('hidden')) {
+    load.classList.remove('hidden');
   }
 }
 
-async function push(){
-  setSS('sy','保存中...');
-  try{
-    await Promise.all([cs('rc3_d',depts),cs('rc3_n',nodes),cs('rc3_c',checks),cs('rc3_l',logs.slice(-400))]);
-    setSS('ok',CLOUD?'クラウド同期: 保存完了':'ローカル保存完了');
-    document.getElementById('stime').textContent='更新: '+fmtNow();
-  }catch(e){setSS('er','保存エラー: '+e.message)}
+function onLoad(id) {
+  const load = document.getElementById('load-' + id);
+  if (load) load.classList.add('hidden');
 }
-function setSS(s,t){document.getElementById('sdot').className='sd '+s;document.getElementById('stxt').textContent=t;}
-
-// ════════════════════════════════════════════════════════
-//  TREE HELPERS (flat walk)
-// ════════════════════════════════════════════════════════
-function walkAll(deptId,cb){(nodes[deptId]||[]).forEach(n=>walk(n,cb));}
-function walk(node,cb){cb(node);(node.children||[]).forEach(c=>walk(c,cb));}
-function findNode(deptId,id){let f=null;walkAll(deptId,n=>{if(n.id===id)f=n;});return f;}
-function countLeaves(node){
-  if(!node.children||!node.children.length)return 1;
-  return node.children.reduce((a,c)=>a+countLeaves(c),0);
-}
-function countLeavesDone(node){
-  if(!node.children||!node.children.length)return checks[node.id]?.done?1:0;
-  return node.children.reduce((a,c)=>a+countLeavesDone(c),0);
-}
-function allLeaves(node){
-  if(!node.children||!node.children.length)return[node];
-  return node.children.flatMap(c=>allLeaves(c));
-}
-
-// ════════════════════════════════════════════════════════
-//  DEPT SELECT
-// ════════════════════════════════════════════════════════
-function buildDS(){
-  const sel=document.getElementById('deptSel');
-  const cur=sel.value;
-  sel.innerHTML='<option value="">-- 部署を選択 --</option>';
-  depts.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.appendChild(o);});
-  if(cur)sel.value=cur;
-}
-function onDept(){
-  const v=document.getElementById('deptSel').value;
-  curDept=v||null; selNodeId=null;
-  localStorage.setItem('rc3_ld',v||'');
-  renderSidebar(); updateStats(); showWelcome();
-}
-
-// ════════════════════════════════════════════════════════
-//  SIDEBAR TREE
-// ════════════════════════════════════════════════════════
-function renderSidebar(){
-  if(!curDept){document.getElementById('treeWrap').innerHTML='';updateStats();return;}
-  const wrap=document.getElementById('treeWrap');
-  wrap.innerHTML='';
-  (nodes[curDept]||[]).forEach(n=>wrap.appendChild(buildTN(n,0)));
-  updateStats();
-}
-
-function buildTN(node,depth){
-  const leaves=countLeaves(node);
-  const done=countLeavesDone(node);
-  const isLeaf=!node.children||!node.children.length;
-  const isOpen=expanded[node.id];
-  const isSel=selNodeId===node.id;
-  const dc=DEPTH_CLASS[node.type]||'d0';
-
-  const div=document.createElement('div');
-  div.className=`tn ${dc}${isSel?' sel':''}${isOpen?' open':''}`;
-  div.id='tn_'+node.id;
-
-  const addLabel={ws:'＋ トーク',talk:'＋ バリエーション',var:'＋ 切り返し',rebuttal:'＋ 切り返し'};
-  const row=document.createElement('div');
-  row.className='tn-row';
-  row.innerHTML=`
-    <span class="tn-chev">${isLeaf?'':' ▶'}</span>
-    <span class="tn-icon">${ICONS[node.type]||'📄'}</span>
-    <span class="tn-lbl">${esc(node.name)}</span>
-    ${!isLeaf?`<span class="tn-cnt">${done}/${leaves}</span>`:''}
-    ${done>0&&isLeaf?`<span class="tn-done">✓</span>`:''}
-    <button class="tn-add" title="${addLabel[node.type]||'追加'}"
-      onclick="event.stopPropagation();openModal('child','${node.id}')">＋</button>`;
-  row.onclick=()=>selectNode(node.id);
-  div.appendChild(row);
-
-  if(!isLeaf){
-    const ch=document.createElement('div');
-    ch.className='tn-children'+(isOpen?'':' hid');
-    (node.children||[]).forEach(c=>ch.appendChild(buildTN(c,depth+1)));
-    div.appendChild(ch);
-  }
-  return div;
-}
-
-function selectNode(id){
-  expanded[id]=!expanded[id];
-  selNodeId=id;
-  renderSidebar();
-  renderMain(id);
-}
-
-// ════════════════════════════════════════════════════════
-//  MAIN PANEL
-// ════════════════════════════════════════════════════════
-function showWelcome(){
-  document.getElementById('breadcrumb').innerHTML='<span class="bc-i cur">ホーム</span>';
-  document.getElementById('mainBody').innerHTML=`<div class="welcome">
-    <div class="welcome-ic">🗂️</div>
-    <div style="font-size:14px;font-weight:700;margin-bottom:6px">ワークスペースを選択してください</div>
-    <div style="font-size:12px;color:var(--mu2)">左サイドバーのツリーからノードを選択してください</div>
-  </div>`;
-}
-
-function renderMain(id){
-  const node=findNode(curDept,id);
-  if(!node)return;
-  renderBreadcrumb(id);
-  const body=document.getElementById('mainBody');
-  const isLeaf=!node.children||!node.children.length;
-  const leaves=allLeaves(node);
-  const tc=TYPE_CLASS[node.type]||'nt0';
-  const leavesCount=countLeaves(node);
-  const doneCount=countLeavesDone(node);
-
-  let html=`<div class="nhd">
-    <div class="nhd-l">
-      <span class="ntype ${tc}">${ICONS[node.type]} ${LABELS[node.type]||''}</span>
-      <div>
-        <div class="ntit">${esc(node.name)}</div>
-        <div class="nsub">${esc(node.sub||'')} ${node.sub?'':''}</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${!isLeaf?`<button class="btn gr" onclick="markAllSub('${node.id}')">✅ 全完了</button>`:''}
-      <button class="btn rd" onclick="deleteNode('${node.id}')">🗑 削除</button>
-    </div>
-  </div>`;
-
-  // 子フォルダグリッド
-  if(!isLeaf){
-    html+=`<div class="ch-grid">`;
-    (node.children||[]).forEach(c=>{
-      const cl=countLeaves(c);const cd=countLeavesDone(c);const pct=cl?Math.round(cd/cl*100):0;
-      html+=`<div class="ch-card" onclick="selectNode('${c.id}')">
-        <div class="ch-ic">${ICONS[c.type]||'📄'}</div>
-        <div class="ch-name">${esc(c.name)}</div>
-        <div class="ch-prog">
-          <div class="ch-prog-t"><div class="ch-prog-f" style="width:${pct}%"></div></div>
-          <div class="ch-cnt">${cd}/${cl} 完了</div>
-        </div>
-      </div>`;
-    });
-    html+=`<div class="ch-card add" onclick="openModal('child','${node.id}')">
-      <div style="font-size:20px">＋</div>
-      <div style="font-size:11px;font-weight:700">${{ws:'トーク追加',talk:'バリエーション追加',var:'切り返し追加',rebuttal:'切り返し追加'}[node.type]||'追加'}</div>
-    </div></div>`;
-  }
-
-  // 録音ファイルリスト（このノード自身 or 子の末端）
-  const items = isLeaf ? [node] : leaves;
-  if(items.length){
-    html+=`<div style="font-size:11px;font-weight:700;color:var(--mu2);margin-bottom:8px">
-      🎙️ 録音ファイル <span style="font-family:var(--mono);font-size:10px;background:var(--s3);padding:1px 6px;border-radius:3px;margin-left:4px">${doneCount}/${leavesCount}</span>
-    </div>
-    <div class="rec-list" id="recList">`;
-    items.forEach(it=>{
-      const s=checks[it.id]||{};const dn=!!s.done;
-      const th=((it.tags||[]).map(t=>
-        t==='unused'?'<span class="mt un">未使用</span>':
-        t==='stopped'?'<span class="mt st">停止中</span>':'')).join('');
-      const path=getPath(curDept,it.id);
-      html+=`<div class="ri${dn?' dn':''}" id="ri_${it.id}">
-        <div class="ri-main" onclick="tog('${it.id}')">
-          <div class="cbx"><span class="ckm">✓</span></div>
-          <div class="ri-body">
-            <div class="ri-name">${esc(it.name)}</div>
-            <div class="ri-path">${esc(path)}</div>
-          </div>
-          <div class="ri-r">${th}
-            <div class="stmp">${s.doneAt?'✓ '+fmtDt(s.doneAt):''}</div>
-          </div>
-          <button class="exb" onclick="event.stopPropagation();exRI('${it.id}')">▼</button>
-        </div>
-        <div class="ri-det">
-          <div class="dg">
-            <div class="df"><label>担当者名</label>
-              <input class="di" id="dp_${it.id}" value="${esc(s.person||'')}" placeholder="例: 田中"></div>
-            <div class="df"><label>完了日時</label>
-              <input class="di" id="dd_${it.id}" value="${s.doneAt?fmtDt(s.doneAt):''}" readonly placeholder="完了時に自動入力"></div>
-          </div>
-          <div class="df"><label>メモ・備考</label>
-            <textarea class="di" id="dm_${it.id}" placeholder="特記事項・修正履歴など">${esc(s.memo||'')}</textarea></div>
-          <div class="da">
-            <button class="bsv" onclick="saveCI('${it.id}')">保存</button>
-            <button class="bcl" onclick="clrCI('${it.id}')">リセット</button>
-          </div>
-        </div>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
-
-  // ログ
-  const deptLogs=logs.filter(l=>l.dept===curDept&&l.nodeId&&
-    (l.nodeId===id||items.some(it=>it.id===l.nodeId)));
-  html+=`<div class="lsec"><div class="lhd">📋 このノードのログ</div>
-    <div class="llist" id="nodeLog"></div></div>`;
-
-  body.innerHTML=html;
-  renderLL(document.getElementById('nodeLog'),deptLogs);
-}
-
-function renderBreadcrumb(id){
-  const path=[];
-  function findPath(nodes2,target){
-    for(const n of nodes2){
-      if(n.id===target){path.push(n);return true;}
-      if(n.children&&findPath(n.children,target)){path.unshift(n);return true;}
-    }
-    return false;
-  }
-  const root=nodes[curDept]||[];
-  root.forEach(n=>{if(!path.length)findPath([n],id);});
-  // path is already in order from root to target
-  let pathNodes=[];
-  function fp(arr,tid){
-    for(const n of arr){
-      if(n.id===tid){pathNodes=[...pathNodes,n];return true;}
-      pathNodes=[...pathNodes,n];
-      if(n.children&&fp(n.children,tid))return true;
-      pathNodes.pop();
-    }
-    return false;
-  }
-  pathNodes=[];fp(root,id);
-  const bc=document.getElementById('breadcrumb');
-  bc.innerHTML=`<span class="bc-i" onclick="showWelcome();selNodeId=null;renderSidebar()">ホーム</span>`;
-  pathNodes.forEach((n,i)=>{
-    bc.innerHTML+=`<span class="bc-sep">›</span>`;
-    if(i===pathNodes.length-1)
-      bc.innerHTML+=`<span class="bc-i cur">${esc(n.name)}</span>`;
-    else
-      bc.innerHTML+=`<span class="bc-i" onclick="selectNode('${n.id}')">${esc(n.name)}</span>`;
-  });
-}
-
-function getPath(deptId,nodeId){
-  let pathNodes=[];
-  function fp(arr){
-    for(const n of arr){
-      pathNodes=[...pathNodes,n];
-      if(n.id===nodeId)return true;
-      if(n.children&&fp(n.children))return true;
-      pathNodes.pop();
-    }
-    return false;
-  }
-  fp(nodes[deptId]||[]);
-  return pathNodes.map(n=>n.name).join(' › ');
-}
-
-// ════════════════════════════════════════════════════════
-//  STATS
-// ════════════════════════════════════════════════════════
-function updateStats(){
-  if(!curDept){
-    ['sDn','sTt','sRm'].forEach(id=>document.getElementById(id).textContent='—');
-    document.getElementById('pf').style.width='0%';
-    document.getElementById('pp').textContent='—';
-    return;
-  }
-  let tot=0,dn=0;
-  walkAll(curDept,n=>{
-    if(!n.children||!n.children.length){tot++;if(checks[n.id]?.done)dn++;}
-  });
-  const rm=tot-dn,pct=tot?Math.round(dn/tot*100):0;
-  document.getElementById('sDn').textContent=dn;
-  document.getElementById('sTt').textContent=tot;
-  document.getElementById('sRm').textContent=rm;
-  document.getElementById('pf').style.width=pct+'%';
-  document.getElementById('pp').textContent=tot?pct+'%':'—';
-}
-
-// ════════════════════════════════════════════════════════
-//  CHECK ACTIONS
-// ════════════════════════════════════════════════════════
-async function tog(id){
-  const s=checks[id]||{};const now=!s.done;
-  checks[id]={...s,done:now,doneAt:now?new Date().toISOString():null};
-  const node=findNode(curDept,id);
-  aLog({action:now?'done':'undone',name:node?.name||id,nodeId:id,
-    dept:curDept,deptName:depts.find(d=>d.id===curDept)?.name||'',person:s.person||''});
-  await push();renderSidebar();if(selNodeId)renderMain(selNodeId);
-  showT(now?`✓ 完了: ${node?.name}`:'↩ 未完了に戻しました','ok');
-}
-function exRI(id){document.getElementById('ri_'+id)?.classList.toggle('ex')}
-async function saveCI(id){
-  const s=checks[id]||{};
-  checks[id]={...s,
-    person:document.getElementById('dp_'+id)?.value.trim()||'',
-    memo:document.getElementById('dm_'+id)?.value.trim()||''};
-  const node=findNode(curDept,id);
-  aLog({action:'saved',name:node?.name||id,nodeId:id,
-    dept:curDept,deptName:depts.find(d=>d.id===curDept)?.name||'',person:checks[id].person});
-  await push();if(selNodeId)renderMain(selNodeId);showT('💾 保存しました','ok');
-}
-async function clrCI(id){
-  if(!confirm('この項目の記録をリセットしますか？'))return;
-  const node=findNode(curDept,id);
-  aLog({action:'cleared',name:node?.name||id,nodeId:id,
-    dept:curDept,deptName:depts.find(d=>d.id===curDept)?.name||''});
-  delete checks[id];
-  await push();renderSidebar();if(selNodeId)renderMain(selNodeId);showT('🔄 リセットしました','info');
-}
-async function markAllSub(nodeId){
-  if(!confirm('このノード以下の全録音ファイルを完了にしますか？'))return;
-  const node=findNode(curDept,nodeId);if(!node)return;
-  const now=new Date().toISOString();
-  allLeaves(node).forEach(l=>{if(!checks[l.id]?.done)checks[l.id]={...(checks[l.id]||{}),done:true,doneAt:now};});
-  aLog({action:'all_done',name:node.name,nodeId,dept:curDept,deptName:depts.find(d=>d.id===curDept)?.name||''});
-  await push();renderSidebar();renderMain(selNodeId||nodeId);showT('✅ 全件完了にしました','ok');
-}
-
-// ════════════════════════════════════════════════════════
-//  NODE CRUD
-// ════════════════════════════════════════════════════════
-let addMode=null,addParentId=null;
-function openModal(mode,parentId){
-  addMode=mode;addParentId=parentId||null;
-  const mo=document.getElementById('addMot');
-  const ms=document.getElementById('addMos');
-  const inp=document.getElementById('addInp');
-  document.getElementById('addSub').value='';
-  document.getElementById('addTag').value='';
-  if(mode==='ws'){mo.textContent='ワークスペースを追加';ms.textContent='商材名を入力してください';inp.placeholder='例: NURO光 / au光';}
-  else{
-    const parent=findNode(curDept,parentId);
-    const ct={ws:'トーク',talk:'バリエーション',var:'切り返し',rebuttal:'切り返し'}[parent?.type]||'ノード';
-    mo.textContent=ct+'を追加';ms.textContent=`「${parent?.name}」の中に追加します`;inp.placeholder=ct+'名';
-  }
-  inp.value='';
-  document.getElementById('addModal').classList.remove('hid');
-  setTimeout(()=>inp.focus(),60);
-}
-function closeAddModal(){document.getElementById('addModal').classList.add('hid');}
-async function confirmAdd(){
-  const name=document.getElementById('addInp').value.trim();
-  if(!name)return;
-  const sub=document.getElementById('addSub').value.trim();
-  const tagStr=document.getElementById('addTag').value.trim();
-  const tags=tagStr?tagStr.split(',').map(t=>t.trim()).filter(Boolean):[];
-  if(addMode==='ws'){
-    if(!curDept){showT('部署を選択してください','err');return;}
-    const id='n'+Date.now();
-    if(!nodes[curDept])nodes[curDept]=[];
-    nodes[curDept].push({id,type:'ws',name,sub,tags,children:[]});
-  } else {
-    const parent=findNode(curDept,addParentId);if(!parent)return;
-    const type=CHILD_TYPE[parent.type]||'rebuttal';
-    if(!parent.children)parent.children=[];
-    parent.children.push({id:'n'+Date.now(),type,name,sub,tags,children:[]});
-  }
-  await push();renderSidebar();closeAddModal();showT(`「${name}」を追加しました`,'ok');
-}
-document.getElementById('addInp').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAdd();});
-
-async function deleteNode(id){
-  const node=findNode(curDept,id);
-  if(!confirm(`「${node?.name}」とその中のデータを削除しますか？`))return;
-  function removeFrom(arr){
-    const i=arr.findIndex(n=>n.id===id);
-    if(i>=0){arr.splice(i,1);return true;}
-    return arr.some(n=>n.children&&removeFrom(n.children));
-  }
-  removeFrom(nodes[curDept]||[]);
-  // 配下のchecksも削除
-  if(node)allLeaves(node).forEach(l=>delete checks[l.id]);
-  selNodeId=null;
-  await push();renderSidebar();showWelcome();showT('削除しました','info');
-}
-
-// ════════════════════════════════════════════════════════
-//  LOG
-// ════════════════════════════════════════════════════════
-const AM={done:'✅ 完了',undone:'↩ 未完了に戻した',saved:'💾 保存',cleared:'🗑 リセット',all_done:'✅ 全完了',dept_reset:'🔄 リセット'};
-function renderLL(el,items){
-  if(!items?.length){el.innerHTML='<div class="le">まだ記録がありません</div>';return;}
-  el.innerHTML=[...items].reverse().map(l=>`
-    <div class="li">
-      <span class="lts">${fmtDt(l.ts)}</span>
-      <span class="lb"><span class="ln">${esc(l.name)}</span> を <strong>${AM[l.action]||l.action}</strong>
-        ${l.person?` — 担当: <strong>${esc(l.person)}</strong>`:''}</span>
-      <span class="ldp">${esc(l.deptName||l.dept||'')}</span>
-    </div>`).join('');
-}
-function aLog(e){logs.push({...e,ts:new Date().toISOString()});if(logs.length>400)logs=logs.slice(-400);}
-
-// ════════════════════════════════════════════════════════
-//  ADMIN
-// ════════════════════════════════════════════════════════
-function openAdmin(){
-  renderAD();buildANodeSel();renderNodeAdmin();
-  document.getElementById('adminModal').classList.remove('hid');
-}
-function closeAdmin(){document.getElementById('adminModal').classList.add('hid');}
-function swAT(id,btn){
-  document.querySelectorAll('.at').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll('.as').forEach(s=>s.classList.remove('on'));
-  btn.classList.add('on');document.getElementById('as-'+id).classList.add('on');
-}
-function renderAD(){
-  document.getElementById('adList').innerHTML=depts.map(d=>`
-    <div class="mrow">
-      <input class="mi" value="${esc(d.name)}" id="adni_${d.id}">
-      <input type="color" class="mc" value="${d.color||'#4f7cff'}" id="adci_${d.id}">
-      <button class="btn rd" style="font-size:10px;padding:4px 9px" onclick="delDept('${d.id}')">削除</button>
-    </div>`).join('');
-}
-function addDept(){
-  const n=document.getElementById('ndn').value.trim();if(!n)return;
-  const id='d'+Date.now();depts.push({id,name:n,color:'#4f7cff'});nodes[id]=[];
-  document.getElementById('ndn').value='';buildDS();renderAD();buildANodeSel();showT(`部署「${n}」を追加しました`,'ok');
-}
-function delDept(id){
-  const d=depts.find(x=>x.id===id);
-  if(!confirm(`部署「${d?.name}」と全データを削除しますか？`))return;
-  depts=depts.filter(x=>x.id!==id);delete nodes[id];
-  if(curDept===id){curDept=null;document.getElementById('deptSel').value='';}
-  buildDS();renderAD();buildANodeSel();showT('削除しました','info');
-}
-function buildANodeSel(){
-  const sel=document.getElementById('ndeptSel');
-  sel.innerHTML=depts.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('');
-  if(curDept)sel.value=curDept;
-  renderNodeAdmin();
-}
-function renderNodeAdmin(){
-  const did=document.getElementById('ndeptSel').value;
-  const el=document.getElementById('neTree');
-  el.innerHTML='';
-  (nodes[did]||[]).forEach(n=>el.appendChild(buildNE(n,did)));
-}
-function buildNE(node,deptId,parentArr){
-  const div=document.createElement('div');
-  div.className='ne-node';
-  div.innerHTML=`<div class="ne-hd">
-    <span class="ne-ic">${ICONS[node.type]||'📄'}</span>
-    <input class="ne-ni" value="${esc(node.name)}" id="nni_${node.id}" placeholder="ノード名">
-    <input class="ne-tag" value="${esc((node.tags||[]).join(','))}" id="nti_${node.id}" placeholder="タグ">
-    <button class="btn rd" style="font-size:10px;padding:3px 8px" onclick="delNodeAdmin('${deptId}','${node.id}')">✕</button>
-  </div>
-  <input class="ne-sub" value="${esc(node.sub||'')}" id="nsi_${node.id}" placeholder="説明（任意）">
-  <div class="ne-children" id="nc_${node.id}"></div>`;
-  if(node.children?.length){
-    const ch=div.querySelector('#nc_'+node.id);
-    node.children.forEach(c=>ch.appendChild(buildNE(c,deptId)));
-  }
-  return div;
-}
-function delNodeAdmin(deptId,id){
-  if(!confirm('このノードを削除しますか？'))return;
-  function rm(arr){const i=arr.findIndex(n=>n.id===id);if(i>=0){arr.splice(i,1);return true;}return arr.some(n=>n.children&&rm(n.children));}
-  rm(nodes[deptId]||[]);renderNodeAdmin();
-}
-async function resetDept(){
-  const did=document.getElementById('ndeptSel').value;
-  const d=depts.find(x=>x.id===did);
-  if(!confirm(`「${d?.name}」のチェック記録を全てリセットしますか？`))return;
-  walkAll(did,n=>{if(!n.children||!n.children.length)delete checks[n.id];});
-  aLog({action:'dept_reset',name:d?.name||did,nodeId:'',dept:did,deptName:d?.name||''});
-  await push();renderSidebar();if(selNodeId)renderMain(selNodeId);showT('リセットしました','info');
-}
-async function saveAdmin(){
-  // 部署名・カラー
-  depts.forEach(d=>{
-    const ni=document.getElementById('adni_'+d.id);const ci=document.getElementById('adci_'+d.id);
-    if(ni)d.name=ni.value.trim()||d.name;if(ci)d.color=ci.value;
-  });
-  // ノード名・説明・タグ
-  Object.keys(nodes).forEach(did=>{
-    walkAll(did,n=>{
-      const ni=document.getElementById('nni_'+n.id);const si=document.getElementById('nsi_'+n.id);const ti=document.getElementById('nti_'+n.id);
-      if(ni)n.name=ni.value.trim()||n.name;if(si)n.sub=si.value.trim();
-      if(ti)n.tags=ti.value?ti.value.split(',').map(t=>t.trim()).filter(Boolean):[];
-    });
-  });
-  await push();buildDS();renderSidebar();closeAdmin();showT('💾 設定を保存しました','ok');
-}
-
-// ════════════════════════════════════════════════════════
-//  IMPORT / EXPORT
-// ════════════════════════════════════════════════════════
-function exportData(){
-  const blob=new Blob([JSON.stringify({version:3,exported:new Date().toISOString(),
-    depts,nodes,checks,logs:logs.slice(-400)},null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`録音作業記録_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'-')}.json`;
-  a.click();showT('📤 エクスポートしました','info');
-}
-function openImport(){document.getElementById('importModal').classList.remove('hid');}
-function closeImport(){document.getElementById('importModal').classList.add('hid');}
-async function doImport(){
-  try{
-    const d=JSON.parse(document.getElementById('impArea').value.trim());
-    if(d.depts)depts=d.depts;if(d.nodes)nodes=d.nodes;
-    if(d.checks)checks=d.checks;if(d.logs)logs=d.logs;
-    await push();buildDS();renderSidebar();closeImport();showT('📥 インポート完了','ok');
-  }catch(e){showT('JSONの形式が正しくありません: '+e.message,'err');}
-}
-
-// ════════════════════════════════════════════════════════
-//  GUIDE PANEL
-// ════════════════════════════════════════════════════════
-const GUIDE_CHAPTERS = [
-  { id:'gp0', label:'📖 表紙' },
-  { id:'gp1', label:'🖥️ 使い方' },
-  { id:'gp2', label:'📡 サービス概要' },
-  { id:'gp3', label:'🔐 ログイン & 連絡先' },
-  { id:'gp4', label:'🚀 オンボーディング' },
-  { id:'gp5', label:'🧩 スクリプト設計' },
-  { id:'gp6', label:'🎙️ 録音 & 発信' },
-  { id:'gp7', label:'📞 オペ対応 & PDCA' },
-];
-let guideCur = 0;
-const guideRead = new Set();
-
-function openGuide() {
-  document.getElementById('guideOverlay').classList.add('open');
-  document.getElementById('guidePanel').classList.add('open');
-  renderGuideNav();
-  guideGoTo(guideCur);
-}
-function closeGuide() {
-  document.getElementById('guideOverlay').classList.remove('open');
-  document.getElementById('guidePanel').classList.remove('open');
-}
-function renderGuideNav() {
-  const nav = document.getElementById('gpNav');
-  nav.innerHTML = GUIDE_CHAPTERS.map((c, i) =>
-    `<button class="gp-tab${guideCur===i?' on':''}" onclick="guideGoTo(${i})">${c.label}</button>`
-  ).join('');
-}
-function guideGoTo(idx) {
-  document.getElementById(GUIDE_CHAPTERS[guideCur].id)?.classList.remove('on');
-  guideCur = Math.max(0, Math.min(idx, GUIDE_CHAPTERS.length - 1));
-  document.getElementById(GUIDE_CHAPTERS[guideCur].id)?.classList.add('on');
-  document.getElementById('gpBody')?.scrollTo(0, 0);
-  guideRead.add(guideCur);
-
-  // pos label
-  document.getElementById('gpPos').textContent = `${guideCur + 1} / ${GUIDE_CHAPTERS.length}`;
-
-  // nav buttons
-  const prev = document.getElementById('gpPrev');
-  const next = document.getElementById('gpNext');
-  prev.disabled = guideCur === 0;
-  if (guideCur === GUIDE_CHAPTERS.length - 1) {
-    next.textContent = '最初に戻る →';
-    next.className = 'gpbtn';
-  } else {
-    next.textContent = '次へ →';
-    next.className = 'gpbtn pr';
-  }
-
-  // progress
-  const pct = Math.round(guideRead.size / GUIDE_CHAPTERS.length * 100);
-  document.getElementById('gppf').style.width = pct + '%';
-  document.getElementById('gppl').textContent = `${guideRead.size} / ${GUIDE_CHAPTERS.length} ページ閲覧済み`;
-
-  renderGuideNav();
-}
-function guideNav(dir) {
-  if (dir === 1 && guideCur === GUIDE_CHAPTERS.length - 1) { guideGoTo(0); return; }
-  guideGoTo(guideCur + dir);
-}
-// ════════════════════════════════════════════════════════
-function fmtDt(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('ja-JP')+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
-function fmtNow(){return fmtDt(new Date().toISOString())}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-let _tt;
-function showT(m,t='ok'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;clearTimeout(_tt);setTimeout(()=>el.classList.add('show'),10);_tt=setTimeout(()=>el.classList.remove('show'),3000);}
-
-// overlay click close
-['adminModal','addModal','importModal'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',e=>{
-    if(e.target===document.getElementById(id))document.getElementById(id).classList.add('hid');
-  });
-});
-
-init();
 </script>
 </body>
 </html>
