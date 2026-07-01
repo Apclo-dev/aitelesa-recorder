@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIテレサポ 録音ツール</title>
+<title>AIテレサポ 録音 & チェックリスト</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -18,6 +18,62 @@
   --radius:12px;
 }
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── チェック統合スタイル ── */
+.node-workspace{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+@media(max-width:900px){.node-workspace{grid-template-columns:1fr}}
+
+/* チェックパネル */
+.check-panel{background:var(--s2);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:sticky;top:0}
+.check-panel-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.check-panel-title{font-size:13px;font-weight:700;flex:1}
+.check-sync-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+.check-sync-dot.ok{background:var(--green);box-shadow:0 0 4px rgba(52,211,153,.5)}
+.check-sync-dot.sy{background:var(--yellow);animation:blink 1s infinite}
+.check-panel-body{padding:14px 16px}
+
+/* ノードのチェック行 */
+.ck-node-row{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border)}
+.ck-node-row:last-child{border-bottom:none}
+.ck-box{width:22px;height:22px;border-radius:7px;border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  cursor:pointer;transition:all .15s;background:var(--s3)}
+.ck-box.done{background:var(--green);border-color:var(--green)}
+.ck-check{font-size:11px;color:#000;font-weight:900;display:none}
+.ck-box.done .ck-check{display:block}
+.ck-body{flex:1;min-width:0}
+.ck-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ck-name.done{text-decoration:line-through;color:var(--muted)}
+.ck-stamp{font-size:10px;color:var(--green);font-family:var(--mono);margin-top:2px;display:none}
+.ck-box.done~.ck-body .ck-stamp{display:block}
+.ck-exp{background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px;
+  padding:2px 4px;transition:transform .2s;flex-shrink:0}
+.ck-node-row.open .ck-exp{transform:rotate(180deg)}
+.ck-detail{display:none;padding:8px 0 4px 32px;border-bottom:1px solid var(--border)}
+.ck-node-row.open+.ck-detail{display:block}
+.ck-di{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:6px;
+  padding:5px 9px;color:var(--text);font-family:inherit;font-size:11px;outline:none;margin-bottom:5px}
+.ck-di:focus{border-color:var(--accent)}
+.ck-di::placeholder{color:var(--muted)}
+.ck-save{padding:5px 14px;border-radius:6px;background:var(--accent);border:none;
+  color:#fff;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer}
+.ck-save:hover{opacity:.88}
+
+/* ツリーのチェックバッジ */
+.tree-ck-badge{font-size:9px;font-family:var(--mono);color:var(--green);
+  flex-shrink:0;background:rgba(52,211,153,.1);padding:1px 5px;border-radius:3px}
+
+/* チェックサマリ */
+.check-summary{display:flex;align-items:center;gap:8px;padding:10px 16px;
+  border-bottom:1px solid var(--border);font-size:11px;color:var(--muted2)}
+.cs-prog{flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.cs-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .4s}
+.cs-lbl{font-family:var(--mono);font-size:10px;color:var(--accent);white-space:nowrap}
+.btn-all-done{padding:4px 10px;border-radius:5px;border:1px solid rgba(52,211,153,.3);
+  background:rgba(52,211,153,.1);color:var(--green);font-size:10px;font-weight:700;
+  font-family:inherit;cursor:pointer;white-space:nowrap}
+.btn-all-done:hover{background:var(--green);color:#000}
 
 /* ── LAYOUT ── */
 .app{display:grid;grid-template-columns:300px 1fr;min-height:100vh}
@@ -691,6 +747,7 @@ function renderNode(node,depth){
       <span class="tree-icon">${ICONS[node.type]||'📄'}</span>
       <span class="tree-label">${esc(node.name)}</span>
       ${node.children.length?`<span class="tree-count">${node.children.length}</span>`:''}
+      ${getNodeCkBadge(node)}
       ${node.type!=='node'||node.type==='node'?`<button class="tree-add" onclick="event.stopPropagation();openModal('child','${node.id}')" title="${ADD_LABELS[node.type]||'追加'}">＋</button>`:''}
     </div>`;
   wrap.appendChild(row);
@@ -722,10 +779,7 @@ async function renderMain(id){
   const node=treeData.find(n=>n.id===id);
   if(!node) return;
 
-  // breadcrumb
   renderBreadcrumb(id);
-
-  // set recorder destination
   document.getElementById('recDest').textContent='保存先: '+getPath(id);
 
   const body=document.getElementById('mainBody');
@@ -733,29 +787,40 @@ async function renderMain(id){
   const recs=await dbGetAll('recs','nodeId',id);
   recs.sort((a,b)=>b.createdAt-a.createdAt);
 
-  let html=`
-    <div class="folder-header">
-      <div class="folder-title">
-        <div class="folder-icon-lg">${ICONS[node.type]||'📄'}</div>
-        <div>
-          <div class="folder-name">${esc(node.name)}</div>
-          <div class="folder-path">${esc(getPath(id))}</div>
-        </div>
-      </div>
-      <div class="folder-actions">
-        <button class="btn btn-ghost" onclick="openModal('rename','${id}')">✏️ 名前変更</button>
-        <button class="btn btn-danger" onclick="deleteNode('${id}')">🗑 削除</button>
-      </div>
-    </div>`;
+  // ── チェック対象ノード（このノード自身 or 子孫のnode型）
+  const ckTargets=getCheckTargets(id);
+  const ckDone=ckTargets.filter(n=>checks[n.id]?.done).length;
+  const ckPct=ckTargets.length?Math.round(ckDone/ckTargets.length*100):0;
 
-  // sub-folders
+  let html=`
+    <div class="node-workspace">
+      <div class="node-left">
+        <div class="folder-header">
+          <div class="folder-title">
+            <div class="folder-icon-lg">${ICONS[node.type]||'📄'}</div>
+            <div>
+              <div class="folder-name">${esc(node.name)}</div>
+              <div class="folder-path">${esc(getPath(id))}</div>
+            </div>
+          </div>
+          <div class="folder-actions">
+            <button class="btn btn-ghost" onclick="openModal('rename','${id}')">✏️ 名前変更</button>
+            <button class="btn btn-danger" onclick="deleteNode('${id}')">🗑 削除</button>
+          </div>
+        </div>`;
+
+  // サブフォルダグリッド
   if(node.type!=='node'||children.length){
     html+=`<div class="subfolder-grid">`;
     children.forEach(c=>{
+      const cTargets=getCheckTargets(c.id);
+      const cDone=cTargets.filter(n=>checks[n.id]?.done).length;
+      const cPct=cTargets.length?Math.round(cDone/cTargets.length*100):0;
       html+=`<div class="subfolder-card" onclick="selectNode('${c.id}')">
         <div class="sf-icon">${ICONS[c.type]||'📄'}</div>
         <div class="sf-name">${esc(c.name)}</div>
         <div class="sf-count">${treeData.filter(n=>n.parentId===c.id).length} 件のフォルダ</div>
+        ${cTargets.length?`<div style="margin-top:4px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden"><div style="height:100%;width:${cPct}%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px"></div></div><div style="font-size:9px;font-family:var(--mono);color:var(--green);margin-top:2px">${cDone}/${cTargets.length} 完了</div>`:''}
       </div>`;
     });
     html+=`<div class="subfolder-card add-card" onclick="openModal('child','${id}')">
@@ -764,7 +829,7 @@ async function renderMain(id){
     </div></div>`;
   }
 
-  // recordings
+  // 録音ファイルリスト
   html+=`<div class="section-head">
     <div class="section-title">🎙️ 録音ファイル <span class="section-count">${recs.length} 件</span></div>
   </div>
@@ -799,7 +864,52 @@ async function renderMain(id){
       </div>`;
     });
   }
-  html+=`</div>`;
+  html+=`</div></div>`; // node-left閉じ
+
+  // ── チェックパネル（右カラム）
+  html+=`<div class="check-panel">
+    <div class="check-panel-hd">
+      <span class="check-panel-title">✅ 完了チェック</span>
+      <span class="check-sync-dot" id="ckSyncDot" title="クラウド同期状態"></span>
+    </div>
+    <div class="check-summary">
+      <div class="cs-prog"><div class="cs-fill" style="width:${ckPct}%"></div></div>
+      <span class="cs-lbl">${ckDone}/${ckTargets.length}</span>
+      <button class="btn-all-done" onclick="markAllDone('${id}')">全完了</button>
+    </div>
+    <div class="check-panel-body">`;
+
+  if(!ckTargets.length){
+    html+=`<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px 0">
+      子ノードを追加するとチェック対象が表示されます
+    </div>`;
+  } else {
+    ckTargets.forEach(n=>{
+      const s=checks[n.id]||{};
+      const dn=!!s.done;
+      html+=`
+      <div class="ck-node-row${s._open?' open':''}" id="ckrow_${n.id}">
+        <div class="ck-box${dn?' done':''}" onclick="toggleCheck('${n.id}','${id}')">
+          <span class="ck-check">✓</span>
+        </div>
+        <div class="ck-body">
+          <div class="ck-name${dn?' done':''}">${esc(n.name)}</div>
+          ${dn&&s.doneAt?`<div class="ck-stamp">✓ ${fmtDt(s.doneAt)}</div>`:''}
+          ${s.person?`<div style="font-size:10px;color:var(--muted2);font-family:var(--mono)">担当: ${esc(s.person)}</div>`:''}
+        </div>
+        <button class="ck-exp" onclick="toggleCkDetail('${n.id}','${id}')">▼</button>
+      </div>
+      <div class="ck-detail" id="ckdet_${n.id}">
+        <input class="ck-di" id="ckp_${n.id}" placeholder="担当者名" value="${esc(s.person||'')}">
+        <textarea class="ck-di" id="ckm_${n.id}" placeholder="メモ・備考" rows="2">${esc(s.memo||'')}</textarea>
+        <button class="ck-save" onclick="saveCheck('${n.id}','${id}')">保存</button>
+      </div>`;
+    });
+  }
+
+  html+=`</div></div>`; // check-panel閉じ
+  html+=`</div>`; // node-workspace閉じ
+
   body.innerHTML=html;
 }
 
@@ -1592,6 +1702,136 @@ function afterNodeSelect(){
 }
 
 // ════════════════════════════════════════════════════════
+//  CHECK STATE — window.storage でクラウド同期
+// ════════════════════════════════════════════════════════
+const CLOUD = typeof window.storage !== 'undefined';
+let checks = {};   // { nodeId: {done, doneAt, person, memo} }
+let ckLogs = [];   // 操作履歴
+
+async function loadChecks() {
+  setCheckSyncDot('sy');
+  try {
+    const [c, l] = await Promise.all([
+      csGet('rc_checks'), csGet('rc_cklogs')
+    ]);
+    checks = c || {};
+    ckLogs = l || [];
+    setCheckSyncDot('ok');
+  } catch { setCheckSyncDot('err'); }
+}
+async function pushChecks() {
+  setCheckSyncDot('sy');
+  try {
+    await Promise.all([
+      csSet('rc_checks', checks),
+      csSet('rc_cklogs', ckLogs.slice(-300))
+    ]);
+    setCheckSyncDot('ok');
+  } catch (e) { setCheckSyncDot('err'); }
+}
+async function csGet(k) {
+  if (CLOUD) { try { const r = await window.storage.get(k,true); return r ? JSON.parse(r.value) : null; } catch { return null; } }
+  try { return JSON.parse(localStorage.getItem(k)); } catch { return null; }
+}
+async function csSet(k, v) {
+  const s = JSON.stringify(v);
+  if (CLOUD) { try { await window.storage.set(k, s, true); } catch {} }
+  localStorage.setItem(k, s);
+}
+function setCheckSyncDot(state) {
+  document.querySelectorAll('.check-sync-dot').forEach(el => {
+    el.className = 'check-sync-dot' + (state==='ok'?' ok':state==='sy'?' sy':'');
+    el.title = state==='ok' ? 'クラウド同期済み' : state==='sy' ? '同期中...' : 'ローカル保存';
+  });
+}
+
+// ── チェック対象のノードを収集（このノードを根とした全node型子孫）
+function getCheckTargets(id) {
+  const result = [];
+  function walk(nodeId) {
+    const node = treeData.find(n => n.id === nodeId);
+    if (!node) return;
+    const children = treeData.filter(n => n.parentId === nodeId).sort((a,b)=>(a.order||0)-(b.order||0));
+    if (node.type === 'node' || !children.length) {
+      result.push(node);
+    }
+    children.forEach(c => walk(c.id));
+  }
+  walk(id);
+  return result;
+}
+
+// ── ツリーのチェックバッジ
+function getNodeCkBadge(node) {
+  const targets = getCheckTargets(node.id);
+  if (!targets.length) return '';
+  const done = targets.filter(n => checks[n.id]?.done).length;
+  if (!done) return '';
+  return `<span class="tree-ck-badge">${done}/${targets.length}</span>`;
+}
+
+// ── チェックを切り替え
+async function toggleCheck(nodeId, parentId) {
+  const s = checks[nodeId] || {};
+  const now = !s.done;
+  checks[nodeId] = { ...s, done: now, doneAt: now ? new Date().toISOString() : null };
+  const node = treeData.find(n => n.id === nodeId);
+  ckLogs.push({ ts: new Date().toISOString(), action: now ? 'done' : 'undone', name: node?.name || nodeId });
+  await pushChecks();
+  renderTree();
+  if (selectedNode) renderMain(selectedNode);
+  toast(now ? `✓ 完了: ${node?.name}` : '↩ 未完了に戻しました', 'ok');
+}
+
+// ── チェックの担当者・メモを保存
+async function saveCheck(nodeId, parentId) {
+  const s = checks[nodeId] || {};
+  checks[nodeId] = {
+    ...s,
+    person: document.getElementById('ckp_' + nodeId)?.value.trim() || '',
+    memo:   document.getElementById('ckm_' + nodeId)?.value.trim() || '',
+  };
+  const node = treeData.find(n => n.id === nodeId);
+  ckLogs.push({ ts: new Date().toISOString(), action: 'saved', name: node?.name || nodeId });
+  await pushChecks();
+  renderTree();
+  if (selectedNode) renderMain(selectedNode);
+  toast('💾 保存しました', 'ok');
+}
+
+// ── 詳細パネル開閉
+function toggleCkDetail(nodeId, parentId) {
+  const row = document.getElementById('ckrow_' + nodeId);
+  const det = document.getElementById('ckdet_' + nodeId);
+  if (!row || !det) return;
+  const isOpen = row.classList.contains('open');
+  row.classList.toggle('open', !isOpen);
+  det.style.display = isOpen ? 'none' : 'block';
+}
+
+// ── このノード以下を全完了
+async function markAllDone(id) {
+  if (!confirm('このノード以下の全項目を完了にしますか？')) return;
+  const targets = getCheckTargets(id);
+  const now = new Date().toISOString();
+  targets.forEach(n => {
+    if (!checks[n.id]?.done) checks[n.id] = { ...(checks[n.id]||{}), done: true, doneAt: now };
+  });
+  ckLogs.push({ ts: now, action: 'all_done', name: treeData.find(n=>n.id===id)?.name || id });
+  await pushChecks();
+  renderTree();
+  if (selectedNode) renderMain(selectedNode);
+  toast('✅ 全件完了にしました', 'ok');
+}
+
+// ── 日時フォーマット
+function fmtDt(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ja-JP') + ' ' + d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ════════════════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════════════════
 window.addEventListener('load',async()=>{
@@ -1601,6 +1841,7 @@ window.addEventListener('load',async()=>{
   try{
     await openDB();
     treeData=await dbGetAll('tree');
+    await loadChecks();   // ← チェック状態をクラウドから読み込み
     renderTree();
     updateStorageBadge();
   }catch(e){document.getElementById('sBadge').textContent='DBエラー: '+e.message;document.getElementById('sDot').className='s-dot warn';}
