@@ -432,7 +432,72 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
   .modal-title{font-size:15px}
 }
 
-/* ── HOLD MUSIC UI ── */
+/* ── ワークスペース選択画面 ── */
+.ws-select-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+  transition:opacity .4s;
+}
+.ws-select-overlay.hide{opacity:0;pointer-events:none}
+.ws-select-overlay.gone{display:none}
+
+.ws-select-inner{width:100%;max-width:560px}
+.ws-select-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.ws-logo-pip{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.ws-logo-txt{font-size:15px;font-weight:900;color:var(--text)}
+.ws-select-title{font-size:28px;font-weight:900;margin-bottom:6px;line-height:1.2}
+.ws-select-sub{font-size:13px;color:var(--muted2);margin-bottom:28px;line-height:1.6}
+
+/* ワークスペースカードグリッド */
+.ws-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.ws-card{
+  background:var(--s2);border:1px solid var(--border2);border-radius:16px;
+  padding:20px 16px;cursor:pointer;transition:all .18s;
+  display:flex;flex-direction:column;gap:8px;
+  position:relative;overflow:hidden;
+}
+.ws-card:hover{border-color:var(--accent);background:var(--ahov);transform:translateY(-2px)}
+.ws-card-icon{font-size:28px}
+.ws-card-name{font-size:14px;font-weight:700;line-height:1.3}
+.ws-card-count{font-size:11px;color:var(--muted2);font-family:var(--mono)}
+.ws-card-prog{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;margin-top:4px}
+.ws-card-prog-f{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px}
+.ws-card-ck{font-size:10px;color:var(--green);font-family:var(--mono)}
+
+/* 新規作成カード */
+.ws-card-new{
+  border-style:dashed;color:var(--muted);
+  justify-content:center;align-items:center;text-align:center;
+  min-height:110px;
+}
+.ws-card-new:hover{color:var(--accent);border-color:var(--accent)}
+.ws-card-new-icon{font-size:24px;margin-bottom:4px}
+.ws-card-new-lbl{font-size:13px;font-weight:700}
+
+/* フッター */
+.ws-select-foot{display:flex;align-items:center;justify-content:space-between;
+  padding-top:16px;border-top:1px solid var(--border)}
+.ws-foot-sync{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.ws-foot-sdot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.ws-foot-sdot.ok{background:var(--green)}
+
+/* ヘッダーのWS切り替えボタン */
+.ws-switch-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:8px;padding:5px 12px;
+  color:var(--muted2);font-size:12px;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:all .15s;
+}
+.ws-switch-btn:hover{border-color:var(--accent);color:var(--text)}
+.ws-switch-name{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media(max-width:600px){
+  .ws-select-title{font-size:22px}
+  .ws-cards{grid-template-columns:repeat(2,1fr)}
+}
 .hold-row{
   padding:10px 0 0;border-top:1px solid var(--border);margin-top:8px;
 }
@@ -473,6 +538,27 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
 <body>
 
 <!-- ドロワーオーバーレイ（モバイル） -->
+<!-- ══ ワークスペース選択オーバーレイ ══ -->
+<div class="ws-select-overlay" id="wsSelectOverlay">
+  <div class="ws-select-inner">
+    <div class="ws-select-logo">
+      <div class="ws-logo-pip"></div>
+      <span class="ws-logo-txt">AIテレサポ 録音 & チェックリスト</span>
+    </div>
+    <div class="ws-select-title">ワークスペースを<br>選択してください</div>
+    <div class="ws-select-sub">作業する商材・プロジェクトを選ぶと<br>録音フォルダとチェックリストが表示されます</div>
+    <div class="ws-cards" id="wsCards">
+      <!-- JS で描画 -->
+    </div>
+    <div class="ws-select-foot">
+      <div class="ws-foot-sync">
+        <div class="ws-foot-sdot" id="wsSyncDot"></div>
+        <span id="wsSyncTxt">初期化中...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 
 <div class="app">
@@ -482,6 +568,13 @@ select.rc-field{appearance:none;-webkit-appearance:none;cursor:pointer;backgroun
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
       <div class="app-logo"><div class="logo-dot"></div>AIテレサポ 録音ツール</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <button class="ws-switch-btn" onclick="openWsSelect()" id="wsSwitchBtn" title="ワークスペースを切り替え">
+          <span>📦</span>
+          <span class="ws-switch-name" id="wsSwitchName">未選択</span>
+          <span style="font-size:9px;color:var(--muted)">▼</span>
+        </button>
+      </div>
       <div class="storage-badge">
         <div class="s-dot" id="sDot"></div>
         <span id="sBadge">IndexedDB 接続中...</span>
@@ -1832,6 +1925,119 @@ function fmtDt(iso) {
 }
 
 // ════════════════════════════════════════════════════════
+//  ワークスペース選択画面
+// ════════════════════════════════════════════════════════
+let currentWsId = null;  // 現在選択中のワークスペースID
+
+// 選択画面を開く
+function openWsSelect() {
+  const ov = document.getElementById('wsSelectOverlay');
+  ov.classList.remove('hide','gone');
+  renderWsCards();
+}
+
+// 選択画面を閉じる（ワークスペース選択済みの場合のみ）
+function closeWsSelect() {
+  if (!currentWsId) return; // 未選択なら閉じない
+  const ov = document.getElementById('wsSelectOverlay');
+  ov.classList.add('hide');
+  setTimeout(() => ov.classList.add('gone'), 400);
+}
+
+// ワークスペースカードを描画
+async function renderWsCards() {
+  const container = document.getElementById('wsCards');
+  // ルートノード（ws型）を取得
+  const wsNodes = treeData.filter(n => n.parentId === null || n.parentId === undefined);
+
+  // 同期ステータス
+  const sdot = document.getElementById('wsSyncDot');
+  const stxt = document.getElementById('wsSyncTxt');
+  if (CLOUD) {
+    sdot.className = 'ws-foot-sdot ok';
+    stxt.textContent = 'クラウド同期: 接続済み';
+  } else {
+    sdot.className = 'ws-foot-sdot';
+    stxt.textContent = 'ローカル保存モード';
+  }
+
+  if (!wsNodes.length) {
+    container.innerHTML = `
+      <div class="ws-card ws-card-new" onclick="openWsSelectNew()">
+        <div class="ws-card-new-icon">＋</div>
+        <div class="ws-card-new-lbl">ワークスペースを作成</div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  for (const ws of wsNodes.sort((a,b)=>(a.order||0)-(b.order||0))) {
+    // 配下の録音数
+    const children = treeData.filter(n => n.parentId === ws.id);
+    const allDescNodes = getAllDescendantNodes(ws.id);
+    const ckTargets = allDescNodes.filter(n => n.type === 'node' || !treeData.some(x=>x.parentId===n.id));
+    const ckDone = ckTargets.filter(n => checks[n.id]?.done).length;
+    const pct = ckTargets.length ? Math.round(ckDone / ckTargets.length * 100) : 0;
+    const isActive = currentWsId === ws.id;
+
+    html += `<div class="ws-card${isActive?' ws-card-active':''}"
+      style="${isActive?'border-color:var(--accent);background:var(--ahov)':''}"
+      onclick="selectWs('${ws.id}')">
+      <div class="ws-card-icon">📦</div>
+      <div class="ws-card-name">${esc(ws.name)}</div>
+      <div class="ws-card-count">${children.length} トーク</div>
+      ${ckTargets.length ? `
+        <div class="ws-card-prog"><div class="ws-card-prog-f" style="width:${pct}%"></div></div>
+        <div class="ws-card-ck">${ckDone}/${ckTargets.length} 完了</div>
+      ` : ''}
+    </div>`;
+  }
+
+  html += `<div class="ws-card ws-card-new" onclick="openWsSelectNew()">
+    <div class="ws-card-new-icon">＋</div>
+    <div class="ws-card-new-lbl">新規作成</div>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+// 配下の全ノードを取得
+function getAllDescendantNodes(id) {
+  const result = [];
+  function walk(nid) {
+    const children = treeData.filter(n => n.parentId === nid);
+    children.forEach(c => { result.push(c); walk(c.id); });
+  }
+  walk(id);
+  return result;
+}
+
+// ワークスペースを選択して作業開始
+function selectWs(wsId) {
+  currentWsId = wsId;
+  localStorage.setItem('rc_lastWs', wsId);
+
+  // ヘッダーのWS名を更新
+  const ws = treeData.find(n => n.id === wsId);
+  if (ws) {
+    document.getElementById('wsSwitchName').textContent = ws.name;
+  }
+
+  // ツリーを展開
+  expanded[wsId] = true;
+  selectedNode = wsId;
+  renderTree();
+  renderMain(wsId);
+  closeWsSelect();
+}
+
+// 選択画面から新規ワークスペース作成
+function openWsSelectNew() {
+  closeWsSelect();
+  openModal('ws');
+}
+
+// ════════════════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════════════════
 window.addEventListener('load',async()=>{
@@ -1841,9 +2047,25 @@ window.addEventListener('load',async()=>{
   try{
     await openDB();
     treeData=await dbGetAll('tree');
-    await loadChecks();   // ← チェック状態をクラウドから読み込み
+    await loadChecks();
     renderTree();
     updateStorageBadge();
+
+    // ── ワークスペース選択画面の初期表示 ──
+    const lastWs = localStorage.getItem('rc_lastWs');
+    const wsNodes = treeData.filter(n => n.parentId === null || n.parentId === undefined);
+
+    if (wsNodes.length === 0) {
+      // WS未作成 → 選択画面を表示（新規作成を促す）
+      openWsSelect();
+    } else if (lastWs && treeData.find(n => n.id === lastWs)) {
+      // 前回のWSが残っている → 直接選択してスキップ
+      selectWs(lastWs);
+    } else {
+      // WS有りだが前回選択なし → 選択画面を表示
+      openWsSelect();
+    }
+
   }catch(e){document.getElementById('sBadge').textContent='DBエラー: '+e.message;document.getElementById('sDot').className='s-dot warn';}
 });
 </script>
