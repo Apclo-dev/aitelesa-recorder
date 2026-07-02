@@ -1694,12 +1694,12 @@ async function applyPad(pcm, sr) {
 async function toWav(blob,trim){
   let pcm=await decodeAndResample(blob);
   if(trim) pcm=trimSilence(pcm,44100);
-  pcm=applyPad(pcm,44100);
+  pcm=await applyPad(pcm,44100);
   return encodeWav(pcm,44100);
 }
 async function toMp3(blob,trim){
   let pcm=await decodeAndResample(blob);if(trim)pcm=trimSilence(pcm,44100);
-  pcm=applyPad(pcm,44100);
+  pcm=await applyPad(pcm,44100);
   if(typeof lamejs!=='undefined'){
     const enc=new lamejs.Mp3Encoder(1,44100,128),s16=new Int16Array(pcm.length);
     for(let i=0;i<pcm.length;i++)s16[i]=Math.max(-32768,Math.min(32767,pcm[i]*32767));
